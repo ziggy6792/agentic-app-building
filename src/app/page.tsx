@@ -5,9 +5,8 @@ import './globals.css';
 import { CopilotKit, useCopilotAction } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
 const MastraChat: React.FC = () => {
-  const runtimeUrl = process.env.NEXT_PUBLIC_RUNTIME_URL || '/api/copilotkit';
   return (
-    <CopilotKit runtimeUrl={runtimeUrl} showDevConsole={false} agent='mastraAgent'>
+    <CopilotKit runtimeUrl={'/api/copilotkit/mastra-agent'} showDevConsole={false} agent='mastraAgent'>
       <Chat />
     </CopilotKit>
   );
