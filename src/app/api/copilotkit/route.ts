@@ -19,5 +19,37 @@ export const POST = async (req: NextRequest) => {
   });
 
   // Use the original request for handleRequest
-  return handleRequest(req);
+  const res = await handleRequest(req);
+
+  // If there's no body, just return as-is
+  const body = res.body;
+  if (!body) return res;
+
+  // Split the stream so we can log on the server and forward to the client
+  const [forwardStream, logStream] = body.tee();
+
+  // Asynchronously read from the logging stream
+  (async () => {
+    const reader = logStream.getReader();
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        // Optional: add your logger here instead of console.log
+        console.log('[CopilotKit SSE]', text);
+      }
+    } catch (err) {
+      console.error('[CopilotKit SSE] logging error', err);
+    } finally {
+      reader.releaseLock();
+    }
+  })();
+
+  // Return a new response with the forwarded stream and original headers/status
+  return new Response(forwardStream, {
+    status: res.status,
+    headers: new Headers(res.headers),
+  });
 };
