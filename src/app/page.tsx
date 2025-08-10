@@ -79,13 +79,18 @@ const Chat = () => {
     console.log('addPolygonTool');
   }, []);
 
+  const renderFn = useCallback(
+    ({ args, result, status }: any) => <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />,
+    []
+  );
+
   useCopilotAction(
     {
       name: 'addPolygonTool',
       description: `Add polygon to editor. Editor size is 900 x 900`,
       parameters: parameters,
       handler: addPolygonToolHandler,
-      render: ({ args, result, status }) => <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />,
+      render: renderFn,
       followUp: true,
     },
     []
