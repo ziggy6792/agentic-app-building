@@ -21,12 +21,12 @@ const MastraChat: React.FC = () => {
 
 const ToolCallMessage = ({ title, args, status, result }: { title: string; args: unknown; status: unknown; result?: unknown }) => (
   <div className='bg-muted/30 my-2 rounded-md border p-3 text-sm'>
-    <div className='mb-1 font-medium'>{title}</div>
+    <div className='mb-1 font-medium text-black'>{title}</div>
     <pre className='bg-background max-h-40 overflow-auto rounded p-2 text-xs'>{JSON.stringify(args, null, 2)}</pre>
-    <div className='text-muted-foreground mt-2 text-xs'>Status: {typeof status === 'string' ? status : JSON.stringify(status)}</div>
+    <div className='mt-2 text-xs text-black'>Status: {typeof status === 'string' ? status : JSON.stringify(status)}</div>
     {typeof result !== 'undefined' && (
-      <div className='mt-2'>
-        <div className='mb-1 text-xs font-medium'>Result</div>
+      <div className='mt-2 '>
+        <div className='mb-1 text-xs font-medium text-black'>Result</div>
         <pre className='bg-background max-h-40 overflow-auto rounded p-2 text-xs'>{JSON.stringify(result, null, 2)}</pre>
       </div>
     )}
@@ -62,7 +62,7 @@ const Chat = () => {
       {
         name: 'points',
         type: 'object[]',
-        description: 'List of points defining the polygon (minimum 3)',
+        description: 'List of points defining the polygon',
         attributes: [
           {
             name: 'x',
@@ -76,24 +76,9 @@ const Chat = () => {
           },
         ],
       },
-      {
-        name: 'fill',
-        type: 'string',
-        description: 'Fill color (CSS color string)',
-      },
-      {
-        name: 'stroke',
-        type: 'string',
-        description: 'Stroke color (CSS color string)',
-      },
-      {
-        name: 'strokeWidth',
-        type: 'number',
-        description: 'Stroke width in pixels',
-      },
     ],
     handler: (args) => {
-      console.log('addPolygonTool!');
+      console.log('addPolygonTool');
     },
     render: ({ args, result, status }) => <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />,
     followUp: true,
