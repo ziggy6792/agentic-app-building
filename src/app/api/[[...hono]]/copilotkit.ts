@@ -14,10 +14,7 @@ const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
 });
 
 // Define a dedicated router for CopilotKit-related endpoints
-export const copilotkit = new Hono();
-
-// POST /api/copilotkit/mastra-agent
-copilotkit.post('/mastra-agent', async (c: Context) => {
+export const copilotkit = new Hono().post('/mastra-agent', async (c: Context) => {
   const req: Request = c.req.raw;
   const res = await handleRequest(req);
 

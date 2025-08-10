@@ -4,13 +4,31 @@ import '@copilotkit/react-ui/styles.css';
 import './globals.css';
 import { CopilotKit, useCopilotAction } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
+import { client } from '@/lib/hono';
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const MastraChat: React.FC = () => {
   return (
-    <CopilotKit runtimeUrl={'/api/copilotkit/mastra-agent'} showDevConsole={false} agent='mastraAgent'>
+    <CopilotKit runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname} showDevConsole={false} agent='mastraAgent'>
       <Chat />
     </CopilotKit>
   );
 };
+
+const ToolCallMessage = ({ title, args, status, result }: { title: string; args: unknown; status: unknown; result?: unknown }) => (
+  <div className='bg-muted/30 my-2 rounded-md border p-3 text-sm'>
+    <div className='mb-1 font-medium'>{title}</div>
+    <pre className='bg-background max-h-40 overflow-auto rounded p-2 text-xs'>{JSON.stringify(args, null, 2)}</pre>
+    <div className='text-muted-foreground mt-2 text-xs'>Status: {typeof status === 'string' ? status : JSON.stringify(status)}</div>
+    {typeof result !== 'undefined' && (
+      <div className='mt-2'>
+        <div className='mb-1 text-xs font-medium'>Result</div>
+        <pre className='bg-background max-h-40 overflow-auto rounded p-2 text-xs'>{JSON.stringify(result, null, 2)}</pre>
+      </div>
+    )}
+  </div>
+);
 
 const Chat = () => {
   const [background, setBackground] = useState<string>('black');
@@ -26,9 +44,12 @@ const Chat = () => {
         description: 'The background. Prefer gradients.',
       },
     ],
-    handler: ({ background }) => {
+    handler: async ({ background }) => {
+      console.log('setBackground', background);
+      // await sleep(100);
       setBackground(background);
     },
+    render: ({ args, result, status }) => <ToolCallMessage title='Tool call: change_background' args={args} result={result} status={status} />,
   });
 
   return (
