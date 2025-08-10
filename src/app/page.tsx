@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import '@copilotkit/react-ui/styles.css';
 import './globals.css';
 import { CopilotKit, useCopilotAction } from '@copilotkit/react-core';
@@ -33,6 +33,26 @@ const ToolCallMessage = ({ title, args, status, result }: { title: string; args:
   </div>
 );
 
+const parameters = [
+  {
+    name: 'points',
+    type: 'object[]' as const,
+    description: 'List of points defining the polygon',
+    attributes: [
+      {
+        name: 'x',
+        type: 'number' as const,
+        description: 'The x coordinate of the point',
+      },
+      {
+        name: 'y',
+        type: 'number' as const,
+        description: 'The y coordinate of the point',
+      },
+    ],
+  },
+];
+
 const Chat = () => {
   const [background, setBackground] = useState<string>('black');
 
@@ -55,34 +75,21 @@ const Chat = () => {
   //   render: ({ args, result, status }) => <ToolCallMessage title='Tool call: change_background' args={args} result={result} status={status} />,
   // });
 
-  useCopilotAction({
-    name: 'addPolygonTool',
-    description: `Add polygon to editor. Editor size is ${DEFAULT_WIDTH} x ${DEFAULT_HEIGHT}`,
-    parameters: [
-      {
-        name: 'points',
-        type: 'object[]',
-        description: 'List of points defining the polygon',
-        attributes: [
-          {
-            name: 'x',
-            type: 'number',
-            description: 'The x coordinate of the point',
-          },
-          {
-            name: 'y',
-            type: 'number',
-            description: 'The y coordinate of the point',
-          },
-        ],
-      },
-    ],
-    handler: (args) => {
-      console.log('addPolygonTool');
+  const addPolygonToolHandler = useCallback(async (args: any) => {
+    console.log('addPolygonTool');
+  }, []);
+
+  useCopilotAction(
+    {
+      name: 'addPolygonTool',
+      description: `Add polygon to editor. Editor size is 900 x 900`,
+      parameters: parameters,
+      handler: addPolygonToolHandler,
+      render: ({ args, result, status }) => <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />,
+      followUp: true,
     },
-    render: ({ args, result, status }) => <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />,
-    followUp: true,
-  });
+    []
+  );
 
   return (
     <div className='flex justify-center items-center h-full w-full' style={{ background }}>
