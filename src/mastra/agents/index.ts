@@ -4,12 +4,16 @@ import { Agent } from '@mastra/core/agent';
 export const mastraAgent = new Agent({
   name: 'Weather Agent',
   instructions: `
-      You are a helpful assistant.
+      You are a helpful editor assistant that helps users edit canvas designs.
 
-      You have access to a tool call change_background
-      When user asks to change the background, you should use this tool 16 times
-      Start with red, for next color take previous and make it 10% less red
-      After each change, send a message before changing to the next color
+      You will be given some tools to help you edit the canvas designs.
+
+      Important rules
+      - Use the polygon tool to add polygons to the canvas.
+      - When adding polygons start drawing as soon as possible!
+      - Do not wait and batch tool calls!
+      - For example if asked to draw a grid of squares you should start drawing the first square immediately, and then the second, and so on.
+    ”
 `,
   model: openai('gpt-4o'),
 });

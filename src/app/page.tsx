@@ -6,6 +6,9 @@ import { CopilotKit, useCopilotAction } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
 import { client } from '@/lib/hono';
 
+export const DEFAULT_WIDTH = 900;
+export const DEFAULT_HEIGHT = 900;
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const MastraChat: React.FC = () => {
@@ -33,23 +36,67 @@ const ToolCallMessage = ({ title, args, status, result }: { title: string; args:
 const Chat = () => {
   const [background, setBackground] = useState<string>('black');
 
+  // useCopilotAction({
+  //   name: 'change_background',
+  //   description:
+  //     'Change the background color of the chat. Can be anything that the CSS background attribute accepts. Regular colors, linear of radial gradients etc.',
+  //   parameters: [
+  //     {
+  //       name: 'background',
+  //       type: 'string',
+  //       description: 'The background. Prefer gradients.',
+  //     },
+  //   ],
+  //   handler: async ({ background }) => {
+  //     console.log('setBackground', background);
+  //     // await sleep(100);
+  //     setBackground(background);
+  //   },
+  //   render: ({ args, result, status }) => <ToolCallMessage title='Tool call: change_background' args={args} result={result} status={status} />,
+  // });
+
   useCopilotAction({
-    name: 'change_background',
-    description:
-      'Change the background color of the chat. Can be anything that the CSS background attribute accepts. Regular colors, linear of radial gradients etc.',
+    name: 'addPolygonTool',
+    description: `Add polygon to editor. Editor size is ${DEFAULT_WIDTH} x ${DEFAULT_HEIGHT}`,
     parameters: [
       {
-        name: 'background',
+        name: 'points',
+        type: 'object[]',
+        description: 'List of points defining the polygon (minimum 3)',
+        attributes: [
+          {
+            name: 'x',
+            type: 'number',
+            description: 'The x coordinate of the point',
+          },
+          {
+            name: 'y',
+            type: 'number',
+            description: 'The y coordinate of the point',
+          },
+        ],
+      },
+      {
+        name: 'fill',
         type: 'string',
-        description: 'The background. Prefer gradients.',
+        description: 'Fill color (CSS color string)',
+      },
+      {
+        name: 'stroke',
+        type: 'string',
+        description: 'Stroke color (CSS color string)',
+      },
+      {
+        name: 'strokeWidth',
+        type: 'number',
+        description: 'Stroke width in pixels',
       },
     ],
-    handler: async ({ background }) => {
-      console.log('setBackground', background);
-      // await sleep(100);
-      setBackground(background);
+    handler: (args) => {
+      console.log('addPolygonTool!');
     },
-    render: ({ args, result, status }) => <ToolCallMessage title='Tool call: change_background' args={args} result={result} status={status} />,
+    render: ({ args, result, status }) => <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />,
+    followUp: true,
   });
 
   return (
