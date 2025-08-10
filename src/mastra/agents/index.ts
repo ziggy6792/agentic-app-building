@@ -2,7 +2,7 @@ import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 
 export const mastraAgent = new Agent({
-  name: 'Weather Agent',
+  name: 'Editor Agent',
   instructions: `
       You are a helpful editor assistant that helps users edit canvas designs.
 
