@@ -11,8 +11,20 @@ export async function downloadCalendarEvent(session: z.infer<typeof sessionSchem
     const endDate = new Date(end);
 
     const event: EventAttributes = {
-      start: [startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), startDate.getHours(), startDate.getMinutes()],
-      end: [endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), endDate.getHours(), endDate.getMinutes()],
+      start: [
+        startDate.getFullYear(),
+        startDate.getMonth() + 1, // ICS months are 1-indexed
+        startDate.getDate(),
+        startDate.getHours(),
+        startDate.getMinutes() || 0, // ICS requires minutes >= 1
+      ],
+      end: [
+        endDate.getFullYear(),
+        endDate.getMonth() + 1, // ICS months are 1-indexed
+        endDate.getDate(),
+        endDate.getHours(),
+        endDate.getMinutes() || 0, // ICS requires minutes >= 1
+      ],
       title: session.title,
       description: `${session.description}\n\nSpeakers: ${session.speakers.join(', ')}`,
       location: session.room,

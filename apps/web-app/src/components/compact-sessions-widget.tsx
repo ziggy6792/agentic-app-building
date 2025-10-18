@@ -16,6 +16,15 @@ type CompactSessionsWidgetProps = {
   onSave: (session: Session) => Promise<void>;
 };
 
+const formatSessionDate = (input: string | Date): string => {
+  const date = typeof input === 'string' ? new Date(input) : input;
+  if (Number.isNaN(date.getTime())) return '';
+  const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
+  const dayOfMonth = String(date.getDate()).padStart(2, '0');
+  const monthShort = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
+  return `${weekday} ${dayOfMonth} ${monthShort}`;
+};
+
 export const CompactSessionsWidget: FC<CompactSessionsWidgetProps> = ({ query = '', results, onSave }) => {
   const [savingSession, setSavingSession] = useState<number | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<number>>(new Set());
@@ -117,6 +126,9 @@ export const CompactSessionsWidget: FC<CompactSessionsWidgetProps> = ({ query = 
                 </div>
 
                 <div className='flex flex-wrap gap-1 text-xs'>
+                  <Badge variant='secondary' className='text-xs h-5 px-1.5'>
+                    {formatSessionDate(session.time.start)}
+                  </Badge>
                   <Badge variant='secondary' className='text-xs h-5 px-1.5'>
                     {new Date(session.time.start).toLocaleTimeString()} - {new Date(session.time.end).toLocaleTimeString()}
                   </Badge>
