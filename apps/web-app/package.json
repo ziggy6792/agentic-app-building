@@ -40,7 +40,6 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "tsx": "^4.20.3",
     "@tailwindcss/postcss": "^4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -53,10 +52,11 @@
     "postcss": "^8.4.39",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
-    "shadcn": "^2.9.3",
+    "shadcn": "^3.4.2",
     "swagger-typescript-api": "^13.0.23",
     "tailwindcss": "^4.1.11",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.5.4"
   }
 }

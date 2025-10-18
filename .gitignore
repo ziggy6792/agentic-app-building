@@ -276,3 +276,5 @@ apps/web-app/**.zip
 **/mastra.db
 
 **/exports
+
+docs/
