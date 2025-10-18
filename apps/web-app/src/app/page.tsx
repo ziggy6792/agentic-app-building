@@ -6,18 +6,11 @@ import { CopilotKit, useCopilotAction } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
 import { client } from '@/lib/hono';
 
-export const DEFAULT_WIDTH = 900;
-export const DEFAULT_HEIGHT = 900;
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const MastraChat: React.FC = () => {
-  return (
-    <CopilotKit runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname} showDevConsole={false} agent='mastraAgent'>
-      <Chat />
-    </CopilotKit>
-  );
-};
+const MastraChat: React.FC = () => (
+  <CopilotKit runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname} showDevConsole={false} agent='mastraAgent'>
+    <Chat />
+  </CopilotKit>
+);
 
 const ToolCallMessage = ({ title, args, status, result }: { title: string; args: unknown; status: unknown; result?: unknown }) => (
   <div className='bg-muted/30 my-2 rounded-md border p-3 text-sm'>
@@ -54,7 +47,7 @@ const parameters = [
 ];
 
 const Chat = () => {
-  const [background, setBackground] = useState<string>('black');
+  const [background] = useState<string>('black');
 
   // useCopilotAction({
   //   name: 'change_background',
@@ -75,12 +68,14 @@ const Chat = () => {
   //   render: ({ args, result, status }) => <ToolCallMessage title='Tool call: change_background' args={args} result={result} status={status} />,
   // });
 
-  const addPolygonToolHandler = useCallback(async (args: any) => {
-    console.log('addPolygonTool');
+  const addPolygonToolHandler = useCallback(async () => {
+    // Tool handler implementation
   }, []);
 
   const renderFn = useCallback(
-    ({ args, result, status }: any) => <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />,
+    ({ args, result, status }: { args: unknown; result?: unknown; status: unknown }) => (
+      <ToolCallMessage title='Tool call: addPolygonTool' args={args} result={result} status={status} />
+    ),
     []
   );
 
@@ -88,7 +83,7 @@ const Chat = () => {
     {
       name: 'addPolygonTool',
       description: `Add polygon to editor. Editor size is 900 x 900`,
-      parameters: parameters,
+      parameters,
       handler: addPolygonToolHandler,
       render: renderFn,
       followUp: true,

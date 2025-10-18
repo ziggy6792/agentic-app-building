@@ -1,0 +1,13 @@
+{
+  "extends": "@zc/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "rootDir": "./",
+    "incremental": true,
+    "strict": false,
+    "declarationMap": true
+  },
+  // No Idea why this does not typecheck correctly, skipped
+  "include": ["**/*"],
+  "exclude": ["node_modules", ".sst/**"]
+}
