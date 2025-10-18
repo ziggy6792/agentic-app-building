@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { createTool } from '@mastra/core/tools';
 import { type z } from 'zod';
 import { embedMany } from 'ai';
