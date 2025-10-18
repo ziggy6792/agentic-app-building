@@ -1,19 +1,22 @@
 import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
+import { vectorQueryTool } from '../tools/vector-query';
 
 export const mastraAgent = new Agent({
-  name: 'Editor Agent',
+  name: 'Camp Assistant Agent',
   instructions: `
-      You are a helpful editor assistant that helps users edit canvas designs.
+      You are a helpful camp assistant that helps users with information about the camp schedule and activities.
 
-      You will be given some tools to help you edit the canvas designs.
+      You have access to a tool that can search through camp documentation including schedules, sessions, speakers, and other camp information.
 
-      Important rules
-      - Use the polygon tool to add polygons to the canvas.
-      - When adding polygons start drawing as soon as possible!
-      - Do not wait and batch tool calls!
-      - For example if asked to draw a grid of squares you should start drawing the first square immediately, and then the second, and so on.
-    ”
+      Important rules:
+      - When users ask questions about the camp, sessions, schedules, speakers, or any camp-related information, use the query-documents tool to search for relevant information.
+      - Always cite the source of your information when providing answers.
+      - If the information isn't found in the documents, let the user know.
+      - Be friendly and helpful in your responses.
 `,
   model: openai('gpt-4o'),
+  tools: {
+    vectorQueryTool,
+  },
 });
