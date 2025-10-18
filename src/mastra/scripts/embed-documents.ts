@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { LibSQLVector } from '@mastra/libsql';
+import { PgVector } from '@mastra/pg';
 import { MDocument } from '@mastra/rag';
 import { readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
@@ -17,9 +17,9 @@ const INDEX_NAME = 'documents';
 async function embedDocuments() {
   console.log('🚀 Starting document embedding process...');
 
-  // Initialize LibSQL vector store
-  const vectorStore = new LibSQLVector({
-    connectionUrl: process.env.DATABASE_URL || 'file:./data/vectors.db',
+  // Initialize PostgreSQL vector store
+  const vectorStore = new PgVector({
+    connectionString: process.env.DB_CONNECTION_STRING!,
   });
 
   // Delete existing index and recreate to clear all data

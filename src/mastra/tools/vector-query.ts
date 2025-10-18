@@ -2,7 +2,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { LibSQLVector } from "@mastra/libsql";
+import { PgVector } from "@mastra/pg";
 
 const INDEX_NAME = "documents";
 
@@ -32,8 +32,8 @@ export const vectorQueryTool = createTool({
       const queryEmbedding = embeddings[0];
 
       // Initialize vector store
-      const vectorStore = new LibSQLVector({
-        connectionUrl: process.env.DATABASE_URL || "file:./data/vectors.db",
+      const vectorStore = new PgVector({
+        connectionString: process.env.DB_CONNECTION_STRING!,
       });
 
       // Query the vector database
