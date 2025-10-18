@@ -1,11 +1,11 @@
 import { Mastra } from "@mastra/core/mastra";
-import { createLogger } from "@mastra/core/logger";
+import { ConsoleLogger } from "@mastra/core/logger";
 
 import { mastraAgent } from "./agents";
 
 export const mastra = new Mastra({
   agents: { mastraAgent },
-  logger: createLogger({
+  logger: new ConsoleLogger({
     name: "Mastra",
     level: "info",
   }),

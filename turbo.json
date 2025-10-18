@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["./.env.*local"],
+  "globalEnv": ["ENV", "LOCAL", "NG_ROCK"],
+  "tasks": {
+    "build": {
+      "env": ["ENV"],
+      "dependsOn": ["^build", "validate:check"],
+      "inputs": [".env.local", ".env.prod", ".env", ".env.dev", "src/**", "tsconfig.json", "next.config.js", "open-next.config.ts"],
+      "outputs": ["dist/**", ".open-next/**", ".next/**"]
+    },
+    "deploy": {
+      "env": ["ENV"],
+      "dependsOn": ["build", "^deploy"],
+      "cache": false
+    },
+    "lint": {},
+    "validate": {},
+    "typecheck": {},
+    "validate:check": {},
+    "test": {},
+    "test:coverage": {},
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": ["MOCK_AUTH", "MOCK_AGENTS"]
+    }
+  }
+}
