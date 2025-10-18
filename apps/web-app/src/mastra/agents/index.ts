@@ -67,14 +67,20 @@ export const sessionFormatAgent = new Agent({
       ${validateAndStringify(sessionsSchema, [
         {
           title: 'Making apps',
-          time: '10:00 - 11:00',
+          time: {
+            start: '2025-01-01T10:00:00',
+            end: '2025-01-01T11:00:00',
+          },
           room: 'Room 1',
           speakers: ['John Doe', 'Jane Doe'],
           description: 'Making apps is a skill that is used to create apps.',
         },
         {
           title: 'Making apps',
-          time: '10:00 - 11:00',
+          time: {
+            start: '2025-01-01T10:00:00',
+            end: '2025-01-01T11:00:00',
+          },
           room: 'Room 1',
           speakers: ['John Doe', 'Jane Doe'],
           description: 'Making apps is a skill that is used to create apps.',

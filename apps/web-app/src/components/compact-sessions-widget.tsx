@@ -13,11 +13,10 @@ type Session = z.infer<typeof sessionSchema>;
 type CompactSessionsWidgetProps = {
   query?: string;
   results?: Session[];
+  onSave: (session: Session) => Promise<void>;
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export const CompactSessionsWidget: FC<CompactSessionsWidgetProps> = ({ query = '', results }) => {
+export const CompactSessionsWidget: FC<CompactSessionsWidgetProps> = ({ query = '', results, onSave }) => {
   const [savingSession, setSavingSession] = useState<number | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<number>>(new Set());
   const [truncatedSessions, setTruncatedSessions] = useState<Set<number>>(new Set());
@@ -59,7 +58,8 @@ export const CompactSessionsWidget: FC<CompactSessionsWidgetProps> = ({ query = 
   const handleSave = async (index: number) => {
     setSavingSession(index);
     try {
-      await sleep(2000);
+      if (!results) return;
+      await onSave(results[index]);
     } finally {
       setSavingSession(null);
     }
@@ -118,7 +118,7 @@ export const CompactSessionsWidget: FC<CompactSessionsWidgetProps> = ({ query = 
 
                 <div className='flex flex-wrap gap-1 text-xs'>
                   <Badge variant='secondary' className='text-xs h-5 px-1.5'>
-                    {session.time}
+                    {new Date(session.time.start).toLocaleTimeString()} - {new Date(session.time.end).toLocaleTimeString()}
                   </Badge>
                   <Badge variant='outline' className='text-xs h-5 px-1.5'>
                     {session.room}
