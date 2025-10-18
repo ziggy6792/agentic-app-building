@@ -1,13 +1,13 @@
 'use client';
-import React, { type FC, useState } from 'react';
+import React, { useState } from 'react';
 import '@copilotkit/react-ui/styles.css';
 import './globals.css';
 import { CopilotKit, useCopilotAction } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
 import type z from 'zod';
 import { client } from '@/lib/hono';
-import { type searchSchema, type sessionsSchema } from '@/mastra/schema';
-import { SessionsWidget } from '@/components/sessions-widget';
+import { type sessionsSchema } from '@/mastra/schema';
+import { CompactSessionsWidget } from '@/components/compact-sessions-widget';
 
 const MastraChat: React.FC = () => (
   <CopilotKit runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname} showDevConsole={false} agent='mastraAgent'>
@@ -22,9 +22,7 @@ const Chat = () => {
     {
       name: 'searchSessionsTool',
       available: 'frontend',
-      render: ({ args, result }) => (
-        <SessionsWidget args={args as z.infer<typeof searchSchema>} result={result as z.infer<typeof sessionsSchema>} />
-      ),
+      render: ({ args, result }) => <CompactSessionsWidget query={args.query} results={result as z.infer<typeof sessionsSchema>} />,
       followUp: false,
     },
     []

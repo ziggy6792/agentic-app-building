@@ -5,15 +5,15 @@ export const searchSchema = z.object({
   topK: z.number().optional().default(3).describe('Number of relevant results to return'),
 });
 
-export const sessionsSchema = z.array(
-  z.object({
-    title: z.string(),
-    time: z.string(),
-    room: z.string(),
-    speakers: z.array(z.string()),
-    description: z.string(),
-  })
-);
+export const sessionSchema = z.object({
+  title: z.string(),
+  time: z.string(),
+  room: z.string(),
+  speakers: z.array(z.string()),
+  description: z.string(),
+});
+
+export const sessionsSchema = z.array(sessionSchema);
 
 export const formattedResultsSchema = z.array(
   z.object({
