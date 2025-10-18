@@ -63,6 +63,10 @@ export const sessionFormatAgent = new Agent({
       })}
 
       You must return the sessions as a JSON object with the following structure:
+
+      All times must be in the format of YYYY-MM-DDTHH:MM:SS.
+      Event times must be between November 06 and November 07 2025.
+      If you are not sure about the time, try to work out if this session is happening on day 1 (November 06) or day 2 (November 07) or the event and make a guess.
       
       ${validateAndStringify(sessionsSchema, [
         {
