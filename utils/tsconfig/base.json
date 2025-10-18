@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Default",
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "moduleResolution": "node",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "strict": true,
+    "strictNullChecks": false,
+    "composite": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "target": "es2017",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "importHelpers": false,
+    "declaration": true,
+    "skipLibCheck": true,
+    "module": "commonjs",
+    "rootDir": "./",
+    "baseUrl": ".",
+    "paths": {},
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": ["node_modules", "dist", "scripts", "**/build", "**/dist", "**/node_modules", "cdk.out", "**/cdk.out"]
+}

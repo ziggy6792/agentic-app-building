@@ -46,8 +46,8 @@ export const vectorQueryTool = createTool({
       // Format results for the agent
       const formattedResults = results.map((result, index) => ({
         rank: index + 1,
-        text: result.metadata?.text || "No text available",
-        source: result.metadata?.source || "Unknown source",
+        text: result.metadata?.text ?? "No text available",
+        source: result.metadata?.source ?? "Unknown source",
         score: result.score,
       }));
 

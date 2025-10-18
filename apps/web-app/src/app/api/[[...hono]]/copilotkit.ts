@@ -5,7 +5,9 @@ import { MastraAgent } from '@ag-ui/mastra';
 import { mastra } from '@/mastra';
 
 // Prepare CopilotKit runtime with local Mastra agents
-const mastraAgents = MastraAgent.getLocalAgents({ mastra });
+const mastraAgents = MastraAgent.getLocalAgents({
+  mastra,
+});
 const runtimeInstance = new CopilotRuntime({ agents: mastraAgents });
 const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
   runtime: runtimeInstance,
