@@ -41,7 +41,8 @@ export const sessionFormatAgent = new Agent({
     role: 'system',
     providerOptions: {
       openai: {
-        reasoning: { effort: 'low' },
+        temperature: 0,
+        text: { verbosity: 'low' },
       },
     },
     content: `
@@ -92,5 +93,5 @@ export const sessionFormatAgent = new Agent({
       ])}
       Do **not** include markdown, comments, or explanation — just the JSON object.`,
   },
-  model: openai('gpt-5-nano'),
+  model: openai('gpt-4o-mini'),
 });
