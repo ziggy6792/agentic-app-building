@@ -10,6 +10,8 @@ import { parseResult } from '../mastra-utils';
 
 const INDEX_NAME = 'documents';
 
+const SCORE_THRESHOLD = 0.2;
+
 const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z.infer<typeof queryResultsSchema>> => {
   const { query, topK } = context;
 
@@ -43,7 +45,7 @@ const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z
 
     return {
       query,
-      results: formattedResults,
+      results: formattedResults.filter((result) => result.score > SCORE_THRESHOLD),
       summary: `Found ${formattedResults.length} relevant document chunks.`,
     };
   } catch (error) {
