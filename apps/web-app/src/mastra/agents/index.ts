@@ -22,9 +22,7 @@ export const mastraAgent = new Agent({
       - searchSessionsTool: Search through the camp schedule and documentation sessions. After calling this tool only tell the user how many sessions were found.
 
       Important rules:
-      - When users ask questions about the camp, sessions, schedules, speakers, or any camp-related information, use the query-documents tool to search for relevant information.
-      - Always cite the source of your information when providing answers.
-      - If the information isn't found in the documents, let the user know.
+      - If no results are found, let the user know.
       - Be friendly and helpful in your responses.
       - DO NOT SUMMARIZE THE RESULTS OF THE TOOL CALLS!
 `,
