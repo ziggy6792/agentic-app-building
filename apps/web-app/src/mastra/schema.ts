@@ -7,7 +7,12 @@ export const searchSchema = z.object({
 
 export const sessionSchema = z.object({
   title: z.string(),
-  time: z.string(),
+  time: z
+    .object({
+      start: z.string().describe('The start time of the session'),
+      end: z.string().describe('The end time of the session'),
+    })
+    .describe('The time of the session'),
   room: z.string(),
   speakers: z.array(z.string()),
   description: z.string(),
