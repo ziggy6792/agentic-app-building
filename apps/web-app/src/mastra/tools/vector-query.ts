@@ -57,14 +57,21 @@ export const searchSessionsTool = createTool({
   inputSchema: searchSchema,
   outputSchema: sessionsSchema,
   execute: async ({ context, mastra, writer }) => {
+    const searchDocumentsTimeA = new Date().getTime();
     const result = await searchDocuments(context);
+    const searchDocumentsTimeB = new Date().getTime();
+    console.log(`Time taken to search documents: ${(searchDocumentsTimeB - searchDocumentsTimeA) / 1000} seconds`);
+    console.log(`result: ${JSON.stringify(result)}`);
 
     const formatAgent = mastra?.getAgent('sessionFormatAgent') as typeof sessionFormatAgent;
+    const timeA = new Date().getTime();
     const stream = await formatAgent?.stream(JSON.stringify(result));
 
     await stream?.textStream?.pipeTo(writer!);
 
     const formattedResult = await stream.text;
+    const timeB = new Date().getTime();
+    console.log(`Time taken to format result: ${(timeB - timeA) / 1000} seconds`);
 
     return parseResult(formattedResult, sessionsSchema);
   },
