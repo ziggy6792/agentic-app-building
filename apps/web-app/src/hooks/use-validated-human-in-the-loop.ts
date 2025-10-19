@@ -1,9 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { useCopilotAction as useRawCopilotAction } from '@copilotkit/react-core';
-import type { ReactNode } from 'react';
+import { useHumanInTheLoop as useRawHumanInTheLoop } from '@copilotkit/react-core';
 import { z } from 'zod';
+import { type FrontendActionAvailability, useCopilotAction as useRawCopilotAction } from '@copilotkit/react-core';
+import type { ReactNode, DependencyList } from 'react';
 
 // Basic shape for CopilotKit parameter descriptors
 // We intentionally keep this as a minimal structural type to avoid coupling to library internals
@@ -155,11 +156,13 @@ export type ValidatedRenderAwaitContext<Args> = {
   status: unknown;
 };
 
-export type UseValidatedCopilotActionOptions<S extends z.ZodTypeAny, R = unknown> = {
+export type UseValidatedCopilotActionOptions<S extends z.AnyZodObject, R = unknown> = {
   name: string;
   description?: string;
+  pairedAction?: string;
   schema: S;
   followUp?: boolean;
+  available?: FrontendActionAvailability;
   parameterDescriptions?: Record<string, string>;
   rootName?: string;
   handler?: (args: z.infer<S>) => Promise<R> | R;
@@ -167,45 +170,41 @@ export type UseValidatedCopilotActionOptions<S extends z.ZodTypeAny, R = unknown
   renderAndWaitForResponse?: (ctx: ValidatedRenderAwaitContext<z.infer<S>>) => ReactNode;
 };
 
-export function useValidatedCopilotAction<S extends z.ZodTypeAny, R = unknown>(options: UseValidatedCopilotActionOptions<S, R>): void {
-  const { name, description, schema, followUp, parameterDescriptions, rootName, handler, render, renderAndWaitForResponse } = options;
+export type UseValidatedHumanInTheLoopOptions<S extends z.AnyZodObject> = {
+  name: string;
+  description?: string;
+  parameters: S; // Zod schema passed under `parameters` to mirror raw hook API
+  available?: FrontendActionAvailability;
+  parameterDescriptions?: Record<string, string>;
+  rootName?: string;
+  render: (ctx: ValidatedRenderAwaitContext<z.infer<S>>) => ReactNode;
+};
 
-  const parameters = zodToCopilotParameters(schema, {
+export function useValidatedHumanInTheLoop<S extends z.AnyZodObject>(
+  options: UseValidatedHumanInTheLoopOptions<S>,
+  deps?: DependencyList
+): void {
+  const { name, description, parameters: zodSchema, available, parameterDescriptions, rootName, render } = options;
+
+  const descriptors = zodToCopilotParameters(zodSchema, {
     descriptions: parameterDescriptions,
     rootName,
   });
 
-  useRawCopilotAction({
-    name,
-    description,
-    parameters: parameters as any,
-    followUp,
-    handler: handler
-      ? (rawArgs: unknown) => {
-          const parsed = schema.parse(rawArgs);
-          return (handler as (a: z.infer<S>) => any)(parsed);
-        }
-      : undefined,
-    render: render
-      ? ({ args, result, status }: any) => {
-          const parsed = schema.safeParse(args);
-          if (!parsed.success) return null;
-          return (render as any)({ args: parsed.data, result, status });
-        }
-      : undefined,
-    renderAndWaitForResponse: renderAndWaitForResponse
-      ? ({ args, respond, status }: any) => {
-          const parsed = schema.safeParse(args);
-          if (!parsed.success) return null;
-          return (renderAndWaitForResponse as any)({
-            args: parsed.data,
-            respond,
-            status,
-          });
-        }
-      : undefined,
-  } as any);
-}
+  const mutableDeps: any[] | undefined = deps ? [...deps] : undefined;
 
-// Optional: provide a re-export with the same name to encourage migration
-export const useCopilotActionWithSchema = useValidatedCopilotAction;
+  useRawHumanInTheLoop(
+    {
+      name,
+      description,
+      parameters: descriptors as any,
+      available,
+      render: ({ args, respond, status }: any) => {
+        const parsed = zodSchema.safeParse(args);
+        if (!parsed.success) return null;
+        return (render as any)({ args: parsed.data, respond, status });
+      },
+    } as any,
+    mutableDeps
+  );
+}
