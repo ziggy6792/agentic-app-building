@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import '@copilotkit/react-ui/styles.css';
 import './globals.css';
-import { CopilotKit, useCopilotAction } from '@copilotkit/react-core';
+import { CopilotKit, useRenderToolCall } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
 import type z from 'zod';
 import { downloadCalendarEvent } from './actions';
@@ -43,14 +43,12 @@ const Chat = () => {
     }
   };
 
-  useCopilotAction(
+  useRenderToolCall(
     {
       name: 'searchSessionsTool',
-      available: 'frontend',
       render: ({ args, result }) => (
         <CompactSessionsWidget query={args.query} results={result as z.infer<typeof sessionsSchema>} onSave={saveSession} />
       ),
-      followUp: false,
     },
     []
   );
