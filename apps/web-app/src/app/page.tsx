@@ -5,16 +5,26 @@ import './globals.css';
 import { CopilotKit, useRenderToolCall } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
 import type z from 'zod';
+import { useSearchParams } from 'next/navigation';
 import { downloadCalendarEvent } from './actions';
 import { client } from '@/lib/hono';
 import { type sessionSchema, type sessionsSchema } from '@/mastra/schema';
 import { CompactSessionsWidget } from '@/components/compact-sessions-widget';
 
-const MastraChat: React.FC = () => (
-  <CopilotKit runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname} showDevConsole={false} agent='mastraAgent'>
-    <Chat />
-  </CopilotKit>
-);
+const MastraChat: React.FC = () => {
+  const sessionId = useSearchParams().get('sessionId');
+
+  return (
+    <CopilotKit
+      runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname}
+      showDevConsole={false}
+      agent='mastraAgent'
+      properties={{ sessionId }}
+    >
+      <Chat />
+    </CopilotKit>
+  );
+};
 
 const Chat = () => {
   const [background] = useState<string>('black');

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { searchSessionsTool } from '../tools/vector-query';
@@ -6,7 +7,7 @@ import { queryResultsSchema, sessionsSchema } from '../schema';
 
 export const mastraAgent = new Agent({
   name: 'Camp Assistant Agent',
-  instructions: {
+  instructions: ({ runtimeContext }) => ({
     role: 'system',
     providerOptions: {
       openai: {
@@ -16,6 +17,7 @@ export const mastraAgent = new Agent({
     content: `
       You are a helpful camp assistant that helps users with information about the camp schedule and activities.
 
+      The sessionId is ${runtimeContext.get('sessionId') as string}.
       You have access to a tool that can search through camp documentation including schedules, sessions, speakers, and other camp information.
 
       You have access to the following tools:
@@ -26,7 +28,7 @@ export const mastraAgent = new Agent({
       - Be friendly and helpful in your responses.
       - DO NOT SUMMARIZE THE RESULTS OF THE TOOL CALLS!
 `,
-  },
+  }),
   model: openai('gpt-5-nano'),
   tools: {
     searchSessionsTool,
