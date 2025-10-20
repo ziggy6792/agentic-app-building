@@ -5,24 +5,30 @@ import './globals.css';
 import { CopilotKit, useRenderToolCall } from '@copilotkit/react-core';
 import { CopilotChat } from '@copilotkit/react-ui';
 import type z from 'zod';
-import { useSearchParams } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 import { downloadCalendarEvent } from './actions';
 import { client } from '@/lib/hono';
 import { type sessionSchema, type sessionsSchema } from '@/mastra/schema';
 import { CompactSessionsWidget } from '@/components/compact-sessions-widget';
+import { Button } from '@/components/ui/button';
 
 const MastraChat: React.FC = () => {
-  const sessionId = useSearchParams().get('sessionId');
-
+  const [sessionId, setSessionId] = useState<string | null>(uuidv4() as string);
   return (
-    <CopilotKit
-      runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname}
-      showDevConsole={false}
-      agent='mastraAgent'
-      properties={{ sessionId }}
-    >
-      <Chat />
-    </CopilotKit>
+    <>
+      <div className='flex flex-row gap-2 items-center p-2'>
+        <Button onClick={() => setSessionId(uuidv4() as string)}>New Session Id</Button>
+        {sessionId && <p>Session Id: {sessionId}</p>}
+      </div>
+      <CopilotKit
+        runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname}
+        showDevConsole={false}
+        agent='mastraAgent'
+        properties={{ sessionId }}
+      >
+        <Chat />
+      </CopilotKit>
+    </>
   );
 };
 
