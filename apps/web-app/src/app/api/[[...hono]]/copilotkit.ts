@@ -59,7 +59,8 @@ export const copilotkit = new Hono()
     });
 
     // Use CustomCopilotRuntime which overrides loadAgentState to return historical messages
-    const runtimeInstance = new CustomCopilotRuntime({ agents: mastraAgents });
+    // Pass the mastra instance so it can query memory
+    const runtimeInstance = new CustomCopilotRuntime({ agents: mastraAgents }, mastra);
     const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
       runtime: runtimeInstance,
       serviceAdapter: new ExperimentalEmptyAdapter(),
