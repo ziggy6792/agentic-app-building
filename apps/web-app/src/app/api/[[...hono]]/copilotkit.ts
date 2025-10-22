@@ -9,29 +9,59 @@ import { getBodyFromRequest } from '@/lib/hono';
 // Prepare CopilotKit runtime with local Mastra agents
 
 // Define a dedicated router for CopilotKit-related endpoints
-export const copilotkit = new Hono().post('/mastra-agent', async (c: Context) => {
-  const req: Request = c.req.raw;
+export const copilotkit = new Hono()
+  .get('/messages/:threadId', async (c: Context) => {
+    try {
+      const threadId = c.req.param('threadId');
+      const agent = mastra.getAgent('mastraAgent');
 
-  const jsonBody = await getBodyFromRequest(c);
+      if (!agent) {
+        return c.json({ error: 'Agent not found' }, 404);
+      }
 
-  const runtimeContext = new RuntimeContext();
-  const properties = jsonBody?.variables?.properties ?? {};
-  if (properties) {
-    for (const [key, value] of Object.entries(properties as Record<string, unknown>)) {
-      runtimeContext.set(key, value);
+      const memory = await agent.getMemory();
+      if (!memory) {
+        return c.json({ messages: [] });
+      }
+
+      const result = await memory.query({
+        threadId,
+        resourceId: threadId,
+        selectBy: {
+          last: 50, // Get last 50 messages
+        },
+      });
+
+      return c.json({ messages: result.messages || [] });
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      return c.json({ error: 'Failed to fetch messages', messages: [] }, 500);
     }
-  }
+  })
+  .post('/mastra-agent', async (c: Context) => {
+    const req: Request = c.req.raw;
 
-  const mastraAgents = MastraAgent.getLocalAgents({
-    mastra,
-    runtimeContext,
-  });
-  const runtimeInstance = new CopilotRuntime({ agents: mastraAgents });
-  const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
-    runtime: runtimeInstance,
-    serviceAdapter: new ExperimentalEmptyAdapter(),
-    endpoint: '/api/copilotkit/mastra-agent',
-  });
+    const jsonBody = await getBodyFromRequest(c);
 
-  return handleRequest(req);
-});
+    const runtimeContext = new RuntimeContext();
+    const properties = jsonBody?.variables?.properties ?? {};
+    if (properties) {
+      for (const [key, value] of Object.entries(properties as Record<string, unknown>)) {
+        runtimeContext.set(key, value);
+      }
+    }
+
+    // AG-UI adapter automatically uses threadId as resourceId for memory persistence
+    const mastraAgents = MastraAgent.getLocalAgents({
+      mastra,
+      runtimeContext,
+    });
+    const runtimeInstance = new CopilotRuntime({ agents: mastraAgents });
+    const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
+      runtime: runtimeInstance,
+      serviceAdapter: new ExperimentalEmptyAdapter(),
+      endpoint: '/api/copilotkit/mastra-agent',
+    });
+
+    return handleRequest(req);
+  });
