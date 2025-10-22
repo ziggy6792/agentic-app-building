@@ -43,6 +43,30 @@ export const copilotkit = new Hono()
 
     const jsonBody = await getBodyFromRequest(c);
 
+    // Inject mocked historical message for testing
+    if (jsonBody?.variables?.data?.messages) {
+      const messages = jsonBody.variables.data.messages;
+      console.log('[CopilotKit] Original message count:', messages.length);
+
+      // Create a mocked historical message
+      const mockedMessage = {
+        id: 'ck-historical-mock-1',
+        createdAt: new Date().toISOString(),
+        textMessage: {
+          content: 'hello world',
+          role: 'user',
+        },
+      };
+
+      // Find the system message (usually first) and insert mock message after it
+      const systemMessageIndex = messages.findIndex((msg: any) => msg.textMessage?.role === 'system');
+      if (systemMessageIndex !== -1) {
+        messages.splice(systemMessageIndex + 1, 0, mockedMessage);
+        console.log('[CopilotKit] Injected mocked message at index', systemMessageIndex + 1);
+        console.log('[CopilotKit] New message count:', messages.length);
+      }
+    }
+
     const runtimeContext = new RuntimeContext();
     const properties = jsonBody?.variables?.properties ?? {};
     if (properties) {
@@ -63,5 +87,12 @@ export const copilotkit = new Hono()
       endpoint: '/api/copilotkit/mastra-agent',
     });
 
-    return handleRequest(req);
+    // Create a new Request with the modified body
+    const modifiedReq = new Request(req.url, {
+      method: req.method,
+      headers: req.headers,
+      body: JSON.stringify(jsonBody),
+    });
+
+    return handleRequest(modifiedReq);
   });
