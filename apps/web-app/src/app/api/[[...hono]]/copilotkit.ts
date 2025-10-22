@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
-import { CopilotRuntime, ExperimentalEmptyAdapter, copilotRuntimeNextJSAppRouterEndpoint } from '@copilotkit/runtime';
+import { ExperimentalEmptyAdapter, copilotRuntimeNextJSAppRouterEndpoint } from '@copilotkit/runtime';
 import { MastraAgent } from '@ag-ui/mastra';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import { mastra } from '@/mastra';
 import { getBodyFromRequest } from '@/lib/hono';
+import { CustomCopilotRuntime } from '@/lib/CustomCopilotRuntime';
 
 // Prepare CopilotKit runtime with local Mastra agents
 
@@ -43,49 +44,6 @@ export const copilotkit = new Hono()
 
     const jsonBody = await getBodyFromRequest(c);
 
-    // Intercept loadAgentState query to return mocked historical messages
-    if (jsonBody?.operationName === 'loadAgentState') {
-      const threadId = jsonBody?.variables?.data?.threadId || '';
-
-      console.log('[CopilotKit] Intercepted loadAgentState query for thread:', threadId);
-
-      // Create a mocked message to test the concept
-      // Match the exact structure CopilotKit expects from GraphQL
-      const mockedMessages = [
-        {
-          __typename: 'TextMessageOutput',
-          id: 'mock-message-1',
-          createdAt: new Date().toISOString(),
-          role: 'user',
-          content: 'hello world',
-          parentMessageId: null,
-          status: {
-            __typename: 'SuccessMessageStatus',
-            code: 'success',
-          },
-        },
-      ];
-
-      console.log('[CopilotKit] Mocked message structure:', JSON.stringify(mockedMessages[0], null, 2));
-
-      // Return proper GraphQL response format
-      const response = {
-        data: {
-          loadAgentState: {
-            threadId,
-            threadExists: true,
-            state: '{}',
-            messages: JSON.stringify(mockedMessages),
-            __typename: 'LoadAgentStateResponse',
-          },
-        },
-      };
-
-      console.log('[CopilotKit] Returning mocked loadAgentState response with', mockedMessages.length, 'messages');
-
-      return c.json(response);
-    }
-
     const runtimeContext = new RuntimeContext();
     const properties = jsonBody?.variables?.properties ?? {};
     if (properties) {
@@ -99,7 +57,9 @@ export const copilotkit = new Hono()
       mastra,
       runtimeContext,
     });
-    const runtimeInstance = new CopilotRuntime({ agents: mastraAgents });
+
+    // Use CustomCopilotRuntime which overrides loadAgentState to return historical messages
+    const runtimeInstance = new CustomCopilotRuntime({ agents: mastraAgents });
     const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
       runtime: runtimeInstance,
       serviceAdapter: new ExperimentalEmptyAdapter(),
