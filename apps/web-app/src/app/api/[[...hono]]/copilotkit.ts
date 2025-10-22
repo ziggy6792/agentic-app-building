@@ -43,28 +43,47 @@ export const copilotkit = new Hono()
 
     const jsonBody = await getBodyFromRequest(c);
 
-    // Inject mocked historical message for testing
-    if (jsonBody?.variables?.data?.messages) {
-      const messages = jsonBody.variables.data.messages;
-      console.log('[CopilotKit] Original message count:', messages.length);
+    // Intercept loadAgentState query to return mocked historical messages
+    if (jsonBody?.operationName === 'loadAgentState') {
+      const threadId = jsonBody?.variables?.data?.threadId || '';
 
-      // Create a mocked historical message
-      const mockedMessage = {
-        id: 'ck-historical-mock-1',
-        createdAt: new Date().toISOString(),
-        textMessage: {
-          content: 'hello world',
+      console.log('[CopilotKit] Intercepted loadAgentState query for thread:', threadId);
+
+      // Create a mocked message to test the concept
+      // Match the exact structure CopilotKit expects from GraphQL
+      const mockedMessages = [
+        {
+          __typename: 'TextMessageOutput',
+          id: 'mock-message-1',
+          createdAt: new Date().toISOString(),
           role: 'user',
+          content: 'hello world',
+          parentMessageId: null,
+          status: {
+            __typename: 'SuccessMessageStatus',
+            code: 'success',
+          },
+        },
+      ];
+
+      console.log('[CopilotKit] Mocked message structure:', JSON.stringify(mockedMessages[0], null, 2));
+
+      // Return proper GraphQL response format
+      const response = {
+        data: {
+          loadAgentState: {
+            threadId,
+            threadExists: true,
+            state: '{}',
+            messages: JSON.stringify(mockedMessages),
+            __typename: 'LoadAgentStateResponse',
+          },
         },
       };
 
-      // Find the system message (usually first) and insert mock message after it
-      const systemMessageIndex = messages.findIndex((msg: any) => msg.textMessage?.role === 'system');
-      if (systemMessageIndex !== -1) {
-        messages.splice(systemMessageIndex + 1, 0, mockedMessage);
-        console.log('[CopilotKit] Injected mocked message at index', systemMessageIndex + 1);
-        console.log('[CopilotKit] New message count:', messages.length);
-      }
+      console.log('[CopilotKit] Returning mocked loadAgentState response with', mockedMessages.length, 'messages');
+
+      return c.json(response);
     }
 
     const runtimeContext = new RuntimeContext();
@@ -87,12 +106,5 @@ export const copilotkit = new Hono()
       endpoint: '/api/copilotkit/mastra-agent',
     });
 
-    // Create a new Request with the modified body
-    const modifiedReq = new Request(req.url, {
-      method: req.method,
-      headers: req.headers,
-      body: JSON.stringify(jsonBody),
-    });
-
-    return handleRequest(modifiedReq);
+    return handleRequest(req);
   });
