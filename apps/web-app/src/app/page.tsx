@@ -13,11 +13,11 @@ import { CompactSessionsWidget } from '@/components/compact-sessions-widget';
 import { Button } from '@/components/ui/button';
 
 const MastraChat: React.FC = () => {
-  const [sessionId, setSessionId] = useState<string | null>(uuidv4() as string);
+  const [sessionId, setSessionId] = useState<string | null>(uuidv4());
   return (
     <>
       <div className='flex flex-row gap-2 items-center p-2'>
-        <Button onClick={() => setSessionId(uuidv4() as string)}>New Session Id</Button>
+        <Button onClick={() => setSessionId(uuidv4())}>New Session Id</Button>
         {sessionId && <p>Session Id: {sessionId}</p>}
       </div>
       <CopilotKit
