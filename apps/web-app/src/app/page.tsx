@@ -58,7 +58,10 @@ const Chat = () => {
   return (
     <div className='flex justify-center items-center h-full w-full' style={{ background }}>
       <div className='w-8/10 h-8/10 rounded-lg '>
-        <CopilotChat className='h-full w-full rounded-2xl py-6' labels={{ initial: 'Hello, how can I help you today?' }} />
+        <CopilotChat
+          className='h-full w-full rounded-2xl py-6'
+          labels={{ initial: 'Hi, please tell what you are looking for. I will help you find the best sessions for you.' }}
+        />
       </div>
     </div>
   );
