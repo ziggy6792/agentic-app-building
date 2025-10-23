@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
+import { Memory } from '@mastra/memory';
+import { PgVector } from '@mastra/pg';
 import { searchSessionsTool } from '../tools/vector-query';
 import { validateAndStringify } from '../mastra-utils';
 import { queryResultsSchema, sessionsSchema } from '../schema';
+import { getStorage } from '../storage';
 
 export const mastraAgent = new Agent({
   name: 'Camp Assistant Agent',
@@ -33,6 +36,20 @@ export const mastraAgent = new Agent({
   tools: {
     searchSessionsTool,
   },
+  memory: new Memory({
+    storage: getStorage(),
+    vector: new PgVector({
+      connectionString: process.env.DB_CONNECTION_STRING!,
+    }),
+    embedder: openai.embedding('text-embedding-3-small'),
+    options: {
+      lastMessages: 10,
+      semanticRecall: {
+        topK: 3,
+        messageRange: 2,
+      },
+    },
+  }),
 });
 
 export const sessionFormatAgent = new Agent({
