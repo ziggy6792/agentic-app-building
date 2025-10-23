@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
-import { CopilotRuntime, ExperimentalEmptyAdapter, copilotRuntimeNextJSAppRouterEndpoint } from '@copilotkit/runtime';
+import { ExperimentalEmptyAdapter, copilotRuntimeNextJSAppRouterEndpoint } from '@copilotkit/runtime';
 import { MastraAgent } from '@ag-ui/mastra';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import { mastra } from '@/mastra';
 import { getBodyFromRequest } from '@/lib/hono';
+import { CustomCopilotRuntime } from '@/lib/CustomCopilotRuntime';
 
 // Prepare CopilotKit runtime with local Mastra agents
 
@@ -22,11 +23,15 @@ export const copilotkit = new Hono().post('/mastra-agent', async (c: Context) =>
     }
   }
 
+  // AG-UI adapter automatically uses threadId as resourceId for memory persistence
   const mastraAgents = MastraAgent.getLocalAgents({
     mastra,
     runtimeContext,
   });
-  const runtimeInstance = new CopilotRuntime({ agents: mastraAgents });
+
+  // Use CustomCopilotRuntime which overrides loadAgentState to return historical messages
+  // Pass the mastra instance so it can query memory
+  const runtimeInstance = new CustomCopilotRuntime({ agents: mastraAgents }, mastra);
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     runtime: runtimeInstance,
     serviceAdapter: new ExperimentalEmptyAdapter(),

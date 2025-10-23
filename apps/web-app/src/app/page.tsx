@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '@copilotkit/react-ui/styles.css';
 import './globals.css';
 import { CopilotKit, useRenderToolCall } from '@copilotkit/react-core';
@@ -13,18 +13,51 @@ import { CompactSessionsWidget } from '@/components/compact-sessions-widget';
 import { Button } from '@/components/ui/button';
 
 const MastraChat: React.FC = () => {
-  const [sessionId, setSessionId] = useState<string | null>(uuidv4());
+  const [threadId, setThreadId] = useState<string>('');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Only run on client side after mounting
+    const savedThreadId = localStorage.getItem('mastra-thread-id');
+    if (savedThreadId) {
+      setThreadId(savedThreadId);
+    } else {
+      const newThreadId = uuidv4();
+      localStorage.setItem('mastra-thread-id', newThreadId);
+      setThreadId(newThreadId);
+    }
+    setIsMounted(true);
+  }, []);
+
+  const handleNewThread = () => {
+    const newThreadId = uuidv4();
+    localStorage.setItem('mastra-thread-id', newThreadId);
+    setThreadId(newThreadId);
+    // Force reload to reset CopilotKit state
+    window.location.reload();
+  };
+
+  // Don't render CopilotKit until we have a threadId
+  if (!isMounted || !threadId) {
+    return (
+      <div className='flex justify-center items-center h-full w-full'>
+        <p className='text-gray-500'>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className='flex flex-row gap-2 items-center p-2'>
-        <Button onClick={() => setSessionId(uuidv4())}>New Session Id</Button>
-        {sessionId && <p>Session Id: {sessionId}</p>}
+        <Button onClick={handleNewThread}>New Conversation</Button>
+        <p className='text-sm text-gray-500'>Thread: {threadId.slice(0, 8)}...</p>
       </div>
       <CopilotKit
+        threadId={threadId}
         runtimeUrl={client.api.copilotkit['mastra-agent'].$url().pathname}
         showDevConsole={false}
         agent='mastraAgent'
-        properties={{ sessionId }}
+        properties={{ threadId }}
       >
         <Chat />
       </CopilotKit>
