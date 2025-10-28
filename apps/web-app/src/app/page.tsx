@@ -8,7 +8,7 @@ import type z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { downloadCalendarEvent } from './actions';
 import { client } from '@/lib/hono';
-import { type sessionSchema, type sessionsSchema } from '@/mastra/schema';
+import { type sessionSchema, type sessionsWithReasonsSchema } from '@/mastra/schema';
 import { CompactSessionsWidget } from '@/components/compact-sessions-widget';
 import { Button } from '@/components/ui/button';
 
@@ -62,9 +62,17 @@ const Chat = () => {
   useRenderToolCall(
     {
       name: 'searchSessionsTool',
-      render: ({ args, result }) => (
-        <CompactSessionsWidget query={args.query} results={result as z.infer<typeof sessionsSchema>} onSave={saveSession} />
-      ),
+      render: ({ args, result }) => {
+        // Handle loading state (result is undefined while tool executes)
+        if (!result) {
+          return <CompactSessionsWidget query={args.query} results={undefined} onSave={saveSession} />;
+        }
+
+        // Extract just the sessions from the sessionsWithReasons format
+        const sessionsWithReasons = result as z.infer<typeof sessionsWithReasonsSchema>;
+        const sessions = sessionsWithReasons.map((item) => item.session);
+        return <CompactSessionsWidget query={args.query} results={sessions} onSave={saveSession} />;
+      },
     },
     []
   );
