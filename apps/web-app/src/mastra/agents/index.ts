@@ -70,15 +70,23 @@ export const sessionExtractionAgent = new Agent({
       - Match the context to ACTUAL sessions from the complete session list below
       - Return ONLY sessions that exist in the provided list
       - DO NOT hallucinate or create new sessions
-      - If results mention room names, match them to sessions in those rooms
-      - If results mention topics/keywords, match them to session descriptions
+
+      MATCHING STRATEGIES (be generous and use indirect clues):
+      - **Related session metadata**: PRIORITY - If search results have relatedSessionTitle or relatedSessionIndex fields, those PDFs are associated with that session. Include that session in results.
+      - **Speaker matching**: If a person's name is mentioned, find sessions where they are a speaker
+      - **Room matching**: If a room name is mentioned, find sessions in that room
+      - **Topic/keyword matching**: If topics, technologies, or concepts are mentioned, find sessions with those in title or description
+      - **Content matching**: If workshop slides or materials mention a topic, check if they have relatedSessionTitle metadata field
+      - Be generous with matches - if there's a contextual connection, include it
       - Rank sessions by relevance to the user's query
 
       COMPLETE SESSION LIST (you MUST only return sessions from this list):
       ${validateAndStringify(sessionsSchema, sessions)}
 
-      Example input:
-      ${validateAndStringify(queryResultsSchema, {
+      EXAMPLES:
+
+      Example 1 - Room matching:
+      Input: ${validateAndStringify(queryResultsSchema, {
         query: 'sessions with a sea view',
         results: [
           {
@@ -97,11 +105,18 @@ export const sessionExtractionAgent = new Agent({
         ],
         summary: 'Found 2 relevant chunks',
       })}
-
-      Example output (return ONLY the JSON array, no markdown or explanation):
-      ${validateAndStringify(sessionsSchema, [
+      Output: ${validateAndStringify(sessionsSchema, [
         sessions[5], // Hands on agentic ai app building - in BALAI ULU which has sea view
       ])}
+
+      Example 2 - Speaker matching:
+      Input: "Session that Pei Zhen is signed up to"
+      If results mention "Pei Zhen" in any context, find sessions where "Pei Zhen" or "Poon, Pei Zhen" appears in speakers list.
+
+      Example 3 - Topic matching with related session metadata:
+      Input: "Interested in FAR loop"
+      If workshop slides PDF mentions "FAR loop" and has relatedSessionTitle="Hands on agentic ai app building", return that session.
+      Look for relatedSessionTitle or relatedSessionIndex in the search results to identify which session a PDF belongs to.
 
       CRITICAL RULES:
       - Return ONLY sessions that exist in the complete session list above

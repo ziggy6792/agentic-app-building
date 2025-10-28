@@ -10,10 +10,10 @@ import { type sessionExtractionAgent } from '../agents';
 import { parseResult } from '../mastra-utils';
 import { DOCUMENTS_INDEX_NAME } from '../config';
 
-const SCORE_THRESHOLD = 0.2;
+const SCORE_THRESHOLD = 0.1; // Lowered from 0.2 to be less strict
 
 const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z.infer<typeof queryResultsSchema>> => {
-  const { query, topK } = context;
+  const { query, topK = 15 } = context; // Increased default from 3 to 15
 
   try {
     // Generate embedding for the query
@@ -32,7 +32,7 @@ const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z
     const results = await vectorStore.query({
       indexName: DOCUMENTS_INDEX_NAME,
       queryVector: queryEmbedding,
-      topK: topK * 2, // Get more results to ensure we have enough context
+      topK: topK * 3, // Get more results to ensure we have enough context (3x multiplier)
     });
 
     console.log('Vector search results:', JSON.stringify(results, null, 2));
@@ -47,6 +47,8 @@ const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z
         source: result.metadata?.source ?? 'Unknown source',
         score: result.score,
         sessionIndex: result.metadata?.sessionIndex as number | undefined,
+        relatedSessionTitle: result.metadata?.relatedSessionTitle as string | undefined,
+        relatedSessionIndex: result.metadata?.relatedSessionIndex as number | undefined,
       }))
       .value();
 

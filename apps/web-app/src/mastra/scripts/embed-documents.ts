@@ -14,6 +14,12 @@ if (!existsSync(DOCS_PATH)) {
   mkdirSync(DOCS_PATH);
 }
 
+// Mapping of PDF filenames to their corresponding session titles
+const SESSION_PDF_MAPPING: Record<string, string> = {
+  'Building-Agentic-Apps-A-Developers-Workshop.pdf': 'Hands on agentic ai app building',
+  // Add more mappings as needed
+};
+
 // Sanitize text to remove null bytes and other problematic characters
 function sanitizeText(text: string): string {
   return text
@@ -103,6 +109,10 @@ async function embedDocuments() {
       // eslint-disable-next-line no-console
       console.log(`  ✂️  Created ${chunks.length} chunks`);
 
+      // Check if this file is associated with a session
+      const relatedSessionTitle = SESSION_PDF_MAPPING[file];
+      const relatedSessionIndex = relatedSessionTitle ? sessions.findIndex((s) => s.title === relatedSessionTitle) : undefined;
+
       // Add chunks with metadata
       chunks.forEach((chunk: { text: string; metadata: Record<string, unknown> }) => {
         const sanitizedText = sanitizeText(chunk.text);
@@ -118,6 +128,8 @@ async function embedDocuments() {
           metadata: {
             text: sanitizedText, // Store text in metadata for retrieval
             source: file,
+            relatedSessionTitle,
+            relatedSessionIndex,
             ...chunk.metadata,
           },
         });
