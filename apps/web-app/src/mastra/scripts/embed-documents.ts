@@ -14,6 +14,13 @@ if (!existsSync(DOCS_PATH)) {
 
 const INDEX_NAME = 'documents';
 
+// Sanitize text to remove null bytes and other problematic characters
+function sanitizeText(text: string): string {
+  return text
+    .replace(/\u0000/g, '') // Remove null bytes
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // Remove other control characters except newline and tab
+}
+
 async function embedDocuments() {
   // eslint-disable-next-line no-console
   console.log('🚀 Starting document embedding process...');
@@ -98,10 +105,18 @@ async function embedDocuments() {
 
       // Add chunks with metadata
       chunks.forEach((chunk: { text: string; metadata: Record<string, unknown> }) => {
+        const sanitizedText = sanitizeText(chunk.text);
+
+        // Skip empty or very short chunks (less than 10 characters)
+        // Also skip chunks that are just whitespace
+        if (!sanitizedText || sanitizedText.trim().length < 10) {
+          return;
+        }
+
         allChunks.push({
-          text: chunk.text,
+          text: sanitizedText,
           metadata: {
-            text: chunk.text, // Store text in metadata for retrieval
+            text: sanitizedText, // Store text in metadata for retrieval
             source: file,
             ...chunk.metadata,
           },
