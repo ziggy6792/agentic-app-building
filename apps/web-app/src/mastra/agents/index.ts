@@ -2,8 +2,6 @@
 import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { searchSessionsTool } from '../tools/vector-query';
-import { validateAndStringify } from '../mastra-utils';
-import { queryResultsSchema, sessionsSchema } from '../schema';
 
 export const mastraAgent = new Agent({
   name: 'Camp Assistant Agent',
@@ -15,16 +13,24 @@ export const mastraAgent = new Agent({
       },
     },
     content: `
-      You are a helpful camp assistant that helps users with information about the camp schedule and activities.
+      You are a helpful camp assistant that helps users find relevant sessions at the APAC SWEX & DX CAMP 2025.
 
       The sessionId is ${runtimeContext.get('sessionId') as string}.
-      You have access to a tool that can search through camp documentation including schedules, sessions, speakers, and other camp information.
+
+      You have access to a semantic search tool that finds actual camp sessions based on user interests.
+      The tool returns real, scheduled sessions with accurate information including:
+      - Session title
+      - Time (start and end)
+      - Room location
+      - Speakers
+      - Full description
 
       You have access to the following tools:
-      - searchSessionsTool: Search through the camp schedule and documentation sessions. After calling this tool only tell the user how many sessions were found.
+      - searchSessionsTool: Searches for camp sessions based on semantic similarity to the user's query. Returns actual scheduled sessions (not document chunks). After calling this tool, tell the user how many sessions were found.
 
       Important rules:
-      - If no results are found, let the user know.
+      - The sessions returned by the tool are REAL scheduled sessions with accurate information.
+      - If no results are found, let the user know and suggest they try rephrasing their query.
       - Be friendly and helpful in your responses.
       - DO NOT SUMMARIZE THE RESULTS OF THE TOOL CALLS!
 `,
@@ -33,65 +39,4 @@ export const mastraAgent = new Agent({
   tools: {
     searchSessionsTool,
   },
-});
-
-export const sessionFormatAgent = new Agent({
-  name: 'Session Format Agent',
-  instructions: {
-    role: 'system',
-    providerOptions: {
-      openai: {
-        temperature: 0,
-        text: { verbosity: 'low' },
-      },
-    },
-    content: `
-      You format the results of a vector query tool into a JSON object.
-
-      Example input:
-
-      ${validateAndStringify(queryResultsSchema, {
-        query: 'Sessions on making apps',
-        results: [
-          {
-            rank: 1,
-            text: 'Making apps is a skill that is used to create apps.',
-            source: 'file.md',
-            score: 0.9,
-          },
-        ],
-        summary: 'Found 1 relevant document chunk.',
-      })}
-
-      You must return the sessions as a JSON object with the following structure:
-
-      All times must be in the format of YYYY-MM-DDTHH:MM:SS.
-      Event times must be between November 06 and November 07 2025.
-      If you are not sure about the time, try to work out if this session is happening on day 1 (November 06) or day 2 (November 07) or the event and make a guess.
-      
-      ${validateAndStringify(sessionsSchema, [
-        {
-          title: 'Making apps',
-          time: {
-            start: '2025-01-01T10:00:00',
-            end: '2025-01-01T11:00:00',
-          },
-          room: 'Room 1',
-          speakers: ['John Doe', 'Jane Doe'],
-          description: 'Making apps is a skill that is used to create apps.',
-        },
-        {
-          title: 'Making apps',
-          time: {
-            start: '2025-01-01T10:00:00',
-            end: '2025-01-01T11:00:00',
-          },
-          room: 'Room 1',
-          speakers: ['John Doe', 'Jane Doe'],
-          description: 'Making apps is a skill that is used to create apps.',
-        },
-      ])}
-      Do **not** include markdown, comments, or explanation — just the JSON object.`,
-  },
-  model: openai('gpt-4o-mini'),
 });
