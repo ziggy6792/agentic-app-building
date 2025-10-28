@@ -27,6 +27,8 @@ export const formattedResultsSchema = z.array(
     source: z.string(),
     score: z.number(),
     sessionIndex: z.number().optional(),
+    relatedSessionTitle: z.string().optional(),
+    relatedSessionIndex: z.number().optional(),
   })
 );
 
