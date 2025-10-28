@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { embedMany } from 'ai';
+import { embedMany, generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { PgVector } from '@mastra/pg';
 import { MDocument } from '@mastra/rag';
@@ -14,17 +14,68 @@ if (!existsSync(DOCS_PATH)) {
   mkdirSync(DOCS_PATH);
 }
 
-// Mapping of PDF filenames to their corresponding session titles
-const SESSION_PDF_MAPPING: Record<string, string> = {
-  'Building-Agentic-Apps-A-Developers-Workshop.pdf': 'Hands on agentic ai app building',
-  // Add more mappings as needed
-};
-
 // Sanitize text to remove null bytes and other problematic characters
 function sanitizeText(text: string): string {
   return text
     .replace(/\u0000/g, '') // Remove null bytes
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // Remove other control characters except newline and tab
+}
+
+// Intelligently match PDF content to a session using LLM
+async function matchPdfToSession(pdfContent: string, filename: string): Promise<{ index: number; title: string } | undefined> {
+  // Use first 2000 characters for matching (title page + intro)
+  const excerpt = pdfContent.substring(0, 2000);
+
+  // Build session list for matching
+  const sessionsList = sessions
+    .map(
+      (session, index) =>
+        `${index}. "${session.title}" - ${session.description.substring(0, 100)}${session.description.length > 100 ? '...' : ''}`
+    )
+    .join('\n');
+
+  try {
+    const { text } = await generateText({
+      model: openai('gpt-4o-mini'),
+      prompt: `You are matching a PDF document to camp sessions.
+
+PDF Filename: ${filename}
+PDF Content (first 2000 chars):
+${excerpt}
+
+Available Sessions:
+${sessionsList}
+
+Task: Determine which session this PDF belongs to based on title, content, and topic similarity.
+
+Rules:
+- Return ONLY the session index number (e.g., "5")
+- If no clear match exists, return "-1"
+- Match based on topic, keywords, and semantic similarity
+- Be generous with fuzzy matches (e.g., "Building Agentic Apps" matches "Hands on agentic ai app building")
+
+Response (number only):`,
+      temperature: 0,
+    });
+
+    const sessionIndex = parseInt(text.trim(), 10);
+
+    if (sessionIndex >= 0 && sessionIndex < sessions.length) {
+      // eslint-disable-next-line no-console
+      console.log(`    🔗 Matched to session: "${sessions[sessionIndex].title}"`);
+      return {
+        index: sessionIndex,
+        title: sessions[sessionIndex].title,
+      };
+    }
+
+    // eslint-disable-next-line no-console
+    console.log('    ℹ️  No clear session match found');
+    return undefined;
+  } catch (error) {
+    console.error(`    ❌ Error matching PDF to session:`, error);
+    return undefined;
+  }
 }
 
 async function embedDocuments() {
@@ -72,6 +123,7 @@ async function embedDocuments() {
 
     try {
       let doc: MDocument;
+      let pdfContent: string | undefined;
 
       // Create document based on file type
       if (file.endsWith('.pdf')) {
@@ -84,6 +136,7 @@ async function embedDocuments() {
         const pdfData = await pdfParse(dataBuffer);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const content = pdfData.text as string;
+        pdfContent = content;
 
         // eslint-disable-next-line no-console
         console.log(`  📄 Extracted ${content.length} characters from PDF`);
@@ -109,9 +162,19 @@ async function embedDocuments() {
       // eslint-disable-next-line no-console
       console.log(`  ✂️  Created ${chunks.length} chunks`);
 
-      // Check if this file is associated with a session
-      const relatedSessionTitle = SESSION_PDF_MAPPING[file];
-      const relatedSessionIndex = relatedSessionTitle ? sessions.findIndex((s) => s.title === relatedSessionTitle) : undefined;
+      // Intelligently match PDF to session using LLM
+      let relatedSessionTitle: string | undefined;
+      let relatedSessionIndex: number | undefined;
+
+      if (pdfContent) {
+        // eslint-disable-next-line no-console
+        console.log('  🤖 Using AI to match PDF to session...');
+        const match = await matchPdfToSession(pdfContent, file);
+        if (match) {
+          relatedSessionTitle = match.title;
+          relatedSessionIndex = match.index;
+        }
+      }
 
       // Add chunks with metadata
       chunks.forEach((chunk: { text: string; metadata: Record<string, unknown> }) => {
