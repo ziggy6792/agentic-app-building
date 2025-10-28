@@ -4,15 +4,15 @@ import { type z } from 'zod';
 import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { PgVector } from '@mastra/pg';
-import { type queryResultsSchema, searchSchema, sessionsSchema } from '../schema';
-import { type sessionFormatAgent } from '../agents';
-import { parseResult } from '../mastra-utils';
+import _ from 'lodash';
+import { searchSchema, sessionsSchema } from '../schema';
+import { sessions } from '@/data/sessions';
 
-const INDEX_NAME = 'documents';
+const INDEX_NAME = 'session_embeddings';
 
 const SCORE_THRESHOLD = 0.2;
 
-const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z.infer<typeof queryResultsSchema>> => {
+const searchSessions = async (context: z.infer<typeof searchSchema>): Promise<z.infer<typeof sessionsSchema>> => {
   const { query, topK } = context;
 
   try {
@@ -35,47 +35,42 @@ const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z
       topK,
     });
 
-    // Format results for the agent
-    const formattedResults = results.map((result, index) => ({
-      rank: index + 1,
-      text: result.metadata?.text ?? 'No text available',
-      source: result.metadata?.source ?? 'Unknown source',
-      score: result.score,
-    }));
+    console.log('Results:', JSON.stringify(results, null, 2));
 
-    return {
-      query,
-      results: formattedResults.filter((result) => result.score > SCORE_THRESHOLD),
-      summary: `Found ${formattedResults.length} relevant document chunks.`,
-    };
+    // Filter by score threshold and extract session objects
+    const matchedSessions = _.chain(results)
+      .filter((result) => result.score > SCORE_THRESHOLD)
+      .orderBy((result) => result.score as number, 'desc')
+      .map((result) => {
+        const sessionIndex = result.metadata?.sessionIndex as number;
+        return sessions[sessionIndex];
+      })
+      .filter((session) => session !== undefined)
+      .value();
+
+    console.log(`Found ${matchedSessions.length} matching sessions for query: "${query}"`);
+
+    console.log('Matched sessions:', JSON.stringify(matchedSessions, null, 2));
+
+    return matchedSessions as z.infer<typeof sessionsSchema>;
   } catch (error) {
-    console.error('Error querying documents:', error);
-    throw new Error(`Failed to query documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Error querying sessions:', error);
+    throw new Error(`Failed to query sessions: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
 export const searchSessionsTool = createTool({
   id: 'searchSessionsTool',
-  description: 'Fetches the current weather information for a given city',
+  description:
+    'Search for camp sessions based on user interests and requirements. Returns actual scheduled sessions with times, rooms, speakers, and descriptions.',
   inputSchema: searchSchema,
   outputSchema: sessionsSchema,
-  execute: async ({ context, mastra, writer }) => {
-    const searchDocumentsTimeA = new Date().getTime();
-    const result = await searchDocuments(context);
-    const searchDocumentsTimeB = new Date().getTime();
-    console.log(`Time taken to search documents: ${(searchDocumentsTimeB - searchDocumentsTimeA) / 1000} seconds`);
-    console.log(`result: ${JSON.stringify(result)}`);
-
-    const formatAgent = mastra?.getAgent('sessionFormatAgent') as typeof sessionFormatAgent;
+  execute: async ({ context }) => {
     const timeA = new Date().getTime();
-    const stream = await formatAgent?.stream(JSON.stringify(result));
-
-    await stream?.textStream?.pipeTo(writer!);
-
-    const formattedResult = await stream.text;
+    const result = await searchSessions(context);
     const timeB = new Date().getTime();
-    console.log(`Time taken to format result: ${(timeB - timeA) / 1000} seconds`);
+    console.log(`Time taken to search sessions: ${(timeB - timeA) / 1000} seconds`);
 
-    return parseResult(formattedResult, sessionsSchema);
+    return result;
   },
 });
