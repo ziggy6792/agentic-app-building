@@ -18,9 +18,9 @@ interface TestCase {
 
 const testCases: TestCase[] = [
   {
-    query: 'Session that Pei Zhen is signed up to',
+    query: 'Session that Simon Verhoeven is signed up to',
     expectedSessionTitle: 'Hands on agentic ai app building',
-    description: 'Speaker matching - Pei Zhen mentioned in documents',
+    description: 'Speaker matching - Simon Verhoeven mentioned in documents',
   },
   {
     query: 'Interested in FAR loop',

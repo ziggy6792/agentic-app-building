@@ -115,7 +115,7 @@ export const sessions: z.infer<typeof sessionsSchema> = [
       end: '2025-11-07 12:00',
     },
     room: 'BALAI ULU',
-    speakers: ['So, Russell', 'Poon, Pei Zhen', 'Chandramohan, Shanmathi'],
+    speakers: ['So, Russell', 'Simon Verhoeven', 'Chandramohan, Shanmathi'],
     description: 'Tabletop board game simulation designed to teach the concepts and mechanics of kanban systems for software development.',
   },
   {
