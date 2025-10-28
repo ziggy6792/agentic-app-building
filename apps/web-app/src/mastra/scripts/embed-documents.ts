@@ -5,6 +5,7 @@ import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { PgVector } from '@mastra/pg';
 import { MDocument } from '@mastra/rag';
+import { sessions } from '@/data/sessions';
 
 const DOCS_PATH = join(process.cwd(), 'docs');
 
@@ -126,6 +127,36 @@ async function embedDocuments() {
       console.error(`  ❌ Error processing ${file}:`, error);
     }
   }
+
+  // Add sessions as rich document chunks
+  // eslint-disable-next-line no-console
+  console.log(`\n📋 Adding ${sessions.length} sessions as rich documents...`);
+  sessions.forEach((session, index) => {
+    const sessionText = `
+Session: ${session.title}
+Time: ${session.time.start} to ${session.time.end}
+Room: ${session.room}
+Speakers: ${session.speakers.join(', ')}
+Description: ${session.description}
+    `.trim();
+
+    const sanitizedText = sanitizeText(sessionText);
+    if (sanitizedText && sanitizedText.trim().length > 10) {
+      allChunks.push({
+        text: sanitizedText,
+        metadata: {
+          text: sanitizedText,
+          source: 'sessions.ts',
+          sessionIndex: index,
+          sessionTitle: session.title,
+          sessionRoom: session.room,
+          type: 'session',
+        },
+      });
+      // eslint-disable-next-line no-console
+      console.log(`  ✅ Added session: ${session.title}`);
+    }
+  });
 
   // eslint-disable-next-line no-console
   console.log(`\n📦 Total chunks to embed: ${allChunks.length}`);
