@@ -3,7 +3,7 @@ import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { searchSessionsTool } from '../tools/vector-query';
 import { validateAndStringify } from '../mastra-utils';
-import { queryResultsSchema, sessionsSchema } from '../schema';
+import { sessionsSchema, sessionsWithReasonsSchema } from '../schema';
 import { sessions } from '@/data/sessions';
 
 export const mastraAgent = new Agent({
@@ -22,12 +22,22 @@ export const mastraAgent = new Agent({
       You have access to a tool that can search through camp documentation including schedules, sessions, speakers, and other camp information.
 
       You have access to the following tools:
-      - searchSessionsTool: Search through the camp schedule and documentation sessions. After calling this tool only tell the user how many sessions were found.
+      - searchSessionsTool: Search through the camp schedule and documentation sessions.
+        The tool returns sessions WITH match explanations (matchReason field).
 
-      Important rules:
-      - If no results are found, let the user know.
-      - Be friendly and helpful in your responses.
-      - DO NOT SUMMARIZE THE RESULTS OF THE TOOL CALLS!
+      RESPONSE FORMAT (CRITICAL):
+      After calling searchSessionsTool, respond in this EXACT format:
+
+      "Found [N] session(s) that match(es) your [query topic] query.
+
+      [Session Title] - [matchReason from tool result]"
+
+      IMPORTANT RULES:
+      - Be extremely concise - sessions are displayed in a UI widget
+      - DO NOT repeat session details (time, room, speakers, description) - they're already in the widget
+      - ONLY show: count, session title, and matchReason
+      - NO follow-up questions or offers to help further
+      - If no results found, just say "No sessions found for [query]"
 `,
   }),
   model: openai('gpt-5-nano'),
@@ -47,7 +57,7 @@ export const sessionExtractionAgent = new Agent({
       },
     },
     content: `
-      You are a session extraction agent that analyzes vector search results and returns ONLY actual sessions from the provided session list.
+      You are a session extraction agent that analyzes vector search results and returns ONLY actual sessions from the provided session list, WITH explanations for each match.
 
       You will receive:
       1. A query from the user
@@ -56,12 +66,14 @@ export const sessionExtractionAgent = new Agent({
          - Venue information (room layouts, locations)
          - Workshop slides and content
          - Other camp documentation
+         - Each result has: text (content), source (filename), score, and optional metadata
 
       Your task:
       - Analyze the search results to understand what the user is looking for
       - Match the context to ACTUAL sessions from the complete session list below
       - Return ONLY sessions that exist in the provided list
       - DO NOT hallucinate or create new sessions
+      - For EACH session, provide a "matchReason" explaining WHY it matched (cite specific evidence)
 
       MATCHING STRATEGIES (be generous and use indirect clues):
       - **Related session metadata**: PRIORITY - If search results have relatedSessionTitle or relatedSessionIndex fields, those PDFs are associated with that session. Include that session in results.
@@ -77,45 +89,30 @@ export const sessionExtractionAgent = new Agent({
 
       EXAMPLES:
 
-      Example 1 - Room matching:
-      Input: ${validateAndStringify(queryResultsSchema, {
-        query: 'sessions with a sea view',
-        results: [
-          {
-            rank: 1,
-            text: 'BALAI ULU room has a beautiful sea view overlooking the beach',
-            source: 'Venue Information.pdf',
-            score: 0.9,
-          },
-          {
-            rank: 2,
-            text: 'Session: Hands on agentic ai app building\nTime: 2025-11-06 13:30 to 2025-11-06 17:30\nRoom: BALAI ULU',
-            source: 'sessions.ts',
-            score: 0.85,
-            sessionIndex: 5,
-          },
-        ],
-        summary: 'Found 2 relevant chunks',
-      })}
-      Output: ${validateAndStringify(sessionsSchema, [
-        sessions[5], // Hands on agentic ai app building - in BALAI ULU which has sea view
+      OUTPUT FORMAT:
+      Return an array of objects with this structure:
+      ${validateAndStringify(sessionsWithReasonsSchema, [
+        {
+          session: sessions[5],
+          matchReason: 'Found in venue information document: BALAI ULU room has sea view. Session is held in BALAI ULU.',
+        },
       ])}
 
-      Example 2 - Speaker matching:
-      Input: "Session that Pei Zhen is signed up to"
-      If results mention "Pei Zhen" in any context, find sessions where "Pei Zhen" or "Poon, Pei Zhen" appears in speakers list.
+      MATCH REASON GUIDELINES:
+      - Be specific: cite the actual evidence (document names, keywords found, metadata)
+      - Be concise: 1-2 sentences max
+      - Examples:
+        * "Session title contains 'hackathon' which directly matches your query"
+        * "Workshop slides (Building-Agentic-Apps PDF) mention 'Claude Code' extensively"
+        * "Speaker 'Poon, Pei Zhen' appears in this session"
+        * "Related to Building-Agentic-Apps workshop slides via metadata link"
 
-      Example 3 - Topic matching with related session metadata:
-      Input: "Interested in FAR loop"
-      If workshop slides PDF mentions "FAR loop" and has relatedSessionTitle="Hands on agentic ai app building", return that session.
-      Look for relatedSessionTitle or relatedSessionIndex in the search results to identify which session a PDF belongs to.
-
-      CRITICAL RULES:
+      CRITICAL OUTPUT RULES:
       - Return ONLY sessions that exist in the complete session list above
       - Return an empty array [] if no sessions match
       - Do NOT create or modify session information
-      - Return the sessions exactly as they appear in the list
-      - Do **not** include markdown, comments, or explanation — just the JSON array
+      - Each session MUST have a matchReason explaining the connection
+      - IMPORTANT: Your response must be ONLY the raw JSON array. No markdown code blocks, no \`\`\`json wrapper, no explanation text before or after. Just the pure JSON array starting with [ and ending with ].
 `,
   },
   model: openai('gpt-4o-mini'),

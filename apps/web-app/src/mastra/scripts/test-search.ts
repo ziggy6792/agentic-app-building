@@ -5,8 +5,8 @@ import { PgVector } from '@mastra/pg';
 import { mastra } from '../index';
 import { type sessionExtractionAgent } from '../agents';
 import { parseResult } from '../mastra-utils';
-import { sessionsSchema } from '../schema';
 import { DOCUMENTS_INDEX_NAME } from '../config';
+import { sessionsWithReasonsSchema } from '../schema';
 
 const SCORE_THRESHOLD = 0.1;
 
@@ -26,6 +26,11 @@ const testCases: TestCase[] = [
     query: 'Interested in FAR loop',
     expectedSessionTitle: 'Hands on agentic ai app building',
     description: 'Topic matching - FAR loop mentioned in workshop slides',
+  },
+  {
+    query: 'Claude code',
+    expectedSessionTitle: 'Hands on agentic ai app building',
+    description: 'Topic matching - Claude Code mentioned in workshop slides',
   },
 ];
 
@@ -95,17 +100,18 @@ async function testSearch(testCase: TestCase) {
 
     console.log(`\n⏱️  Extraction took ${extractTime}ms`);
 
-    const sessions = parseResult(extractedSessions, sessionsSchema);
+    const sessionsWithReasons = parseResult(extractedSessions, sessionsWithReasonsSchema);
 
-    console.log(`\n✅ Extracted ${sessions.length} session(s):`);
-    sessions.forEach((session) => {
-      console.log(`  - ${session.title}`);
-      console.log(`    Speakers: ${session.speakers.join(', ')}`);
-      console.log(`    Room: ${session.room}`);
+    console.log(`\n✅ Extracted ${sessionsWithReasons.length} session(s):`);
+    sessionsWithReasons.forEach((item) => {
+      console.log(`  - ${item.session.title}`);
+      console.log(`    Match Reason: ${item.matchReason}`);
+      console.log(`    Speakers: ${item.session.speakers.join(', ')}`);
+      console.log(`    Room: ${item.session.room}`);
     });
 
     // Check if expected session is in results
-    const foundExpected = sessions.some((s) => s.title === testCase.expectedSessionTitle);
+    const foundExpected = sessionsWithReasons.some((item) => item.session.title === testCase.expectedSessionTitle);
     if (foundExpected) {
       console.log(`\n✅ SUCCESS: Found expected session "${testCase.expectedSessionTitle}"`);
       return true;

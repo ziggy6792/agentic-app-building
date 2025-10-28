@@ -5,7 +5,7 @@ import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { PgVector } from '@mastra/pg';
 import _ from 'lodash';
-import { type queryResultsSchema, searchSchema, sessionsSchema } from '../schema';
+import { type queryResultsSchema, searchSchema, sessionsWithReasonsSchema } from '../schema';
 import { type sessionExtractionAgent } from '../agents';
 import { parseResult } from '../mastra-utils';
 import { DOCUMENTS_INDEX_NAME } from '../config';
@@ -66,28 +66,29 @@ const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z
 export const searchSessionsTool = createTool({
   id: 'searchSessionsTool',
   description:
-    'Search for camp sessions using rich context from venue information, workshop slides, and session descriptions. Returns actual scheduled sessions that match the user query.',
+    'Search for camp sessions using rich context from venue information, workshop slides, and session descriptions. Returns actual scheduled sessions with explanations for why they match the user query.',
   inputSchema: searchSchema,
-  outputSchema: sessionsSchema,
+  outputSchema: sessionsWithReasonsSchema,
   execute: async ({ context, mastra, writer }) => {
     const searchTimeA = new Date().getTime();
     const searchResults = await searchDocuments(context);
     const searchTimeB = new Date().getTime();
     console.log(`Time taken to search documents: ${(searchTimeB - searchTimeA) / 1000} seconds`);
 
-    // Use session extraction agent to map document results to actual sessions
+    // Use session extraction agent to map document results to actual sessions with reasons
     const extractAgent = mastra?.getAgent('sessionExtractionAgent') as typeof sessionExtractionAgent;
     const extractTimeA = new Date().getTime();
     const stream = await extractAgent?.stream(JSON.stringify(searchResults));
 
     await stream?.textStream?.pipeTo(writer!);
 
-    const extractedSessions = await stream.text;
+    const extractedSessionsWithReasons = await stream.text;
     const extractTimeB = new Date().getTime();
     console.log(`Time taken to extract sessions: ${(extractTimeB - extractTimeA) / 1000} seconds`);
 
-    console.log('Extracted sessions:', extractedSessions);
+    // Parse sessions with reasons
+    const sessionsWithReasons = parseResult(extractedSessionsWithReasons, sessionsWithReasonsSchema);
 
-    return parseResult(extractedSessions, sessionsSchema);
+    return sessionsWithReasons;
   },
 });

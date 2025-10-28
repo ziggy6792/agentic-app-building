@@ -20,6 +20,13 @@ export const sessionSchema = z.object({
 
 export const sessionsSchema = z.array(sessionSchema);
 
+export const sessionWithReasonSchema = z.object({
+  session: sessionSchema,
+  matchReason: z.string().describe('Explanation of why this session matched the user query'),
+});
+
+export const sessionsWithReasonsSchema = z.array(sessionWithReasonSchema);
+
 export const formattedResultsSchema = z.array(
   z.object({
     rank: z.number(),
