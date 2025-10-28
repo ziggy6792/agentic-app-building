@@ -104,7 +104,7 @@ export const sessionExtractionAgent = new Agent({
       - Examples:
         * "Session title contains 'hackathon' which directly matches your query"
         * "Workshop slides (Building-Agentic-Apps PDF) mention 'Claude Code' extensively"
-        * "Speaker 'Poon, Pei Zhen' appears in this session"
+        * "Speaker 'Simon Verhoeven' appears in this session"
         * "Related to Building-Agentic-Apps workshop slides via metadata link"
 
       CRITICAL OUTPUT RULES:
