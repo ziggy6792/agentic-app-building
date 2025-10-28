@@ -5,14 +5,14 @@ import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { PgVector } from '@mastra/pg';
 import { MDocument } from '@mastra/rag';
+import { DOCUMENTS_INDEX_NAME } from '../config';
+import { sessions } from '@/data/sessions';
 
 const DOCS_PATH = join(process.cwd(), 'docs');
 
 if (!existsSync(DOCS_PATH)) {
   mkdirSync(DOCS_PATH);
 }
-
-const INDEX_NAME = 'documents';
 
 // Sanitize text to remove null bytes and other problematic characters
 function sanitizeText(text: string): string {
@@ -34,7 +34,7 @@ async function embedDocuments() {
   // eslint-disable-next-line no-console
   console.log('🗑️  Clearing existing embeddings...');
   try {
-    await vectorStore.deleteIndex({ indexName: INDEX_NAME });
+    await vectorStore.deleteIndex({ indexName: DOCUMENTS_INDEX_NAME });
     // eslint-disable-next-line no-console
     console.log('  ✅ Cleared existing data');
   } catch {
@@ -47,7 +47,7 @@ async function embedDocuments() {
   // eslint-disable-next-line no-console
   console.log('📊 Creating vector index...');
   await vectorStore.createIndex({
-    indexName: INDEX_NAME,
+    indexName: DOCUMENTS_INDEX_NAME,
     dimension: 1536,
   });
 
@@ -127,6 +127,36 @@ async function embedDocuments() {
     }
   }
 
+  // Add sessions as rich document chunks
+  // eslint-disable-next-line no-console
+  console.log(`\n📋 Adding ${sessions.length} sessions as rich documents...`);
+  sessions.forEach((session, index) => {
+    const sessionText = `
+Session: ${session.title}
+Time: ${session.time.start} to ${session.time.end}
+Room: ${session.room}
+Speakers: ${session.speakers.join(', ')}
+Description: ${session.description}
+    `.trim();
+
+    const sanitizedText = sanitizeText(sessionText);
+    if (sanitizedText && sanitizedText.trim().length > 10) {
+      allChunks.push({
+        text: sanitizedText,
+        metadata: {
+          text: sanitizedText,
+          source: 'sessions.ts',
+          sessionIndex: index,
+          sessionTitle: session.title,
+          sessionRoom: session.room,
+          type: 'session',
+        },
+      });
+      // eslint-disable-next-line no-console
+      console.log(`  ✅ Added session: ${session.title}`);
+    }
+  });
+
   // eslint-disable-next-line no-console
   console.log(`\n📦 Total chunks to embed: ${allChunks.length}`);
 
@@ -145,7 +175,7 @@ async function embedDocuments() {
   // eslint-disable-next-line no-console
   console.log('💾 Storing embeddings in vector database...');
   await vectorStore.upsert({
-    indexName: INDEX_NAME,
+    indexName: DOCUMENTS_INDEX_NAME,
     vectors: embeddings,
     metadata: allChunks.map((chunk) => chunk.metadata),
   });
@@ -161,7 +191,7 @@ async function embedDocuments() {
   // eslint-disable-next-line no-console
   console.log(`  - Embeddings stored: ${embeddings.length}`);
   // eslint-disable-next-line no-console
-  console.log(`  - Index name: ${INDEX_NAME}`);
+  console.log(`  - Index name: ${DOCUMENTS_INDEX_NAME}`);
 }
 
 // Run the script

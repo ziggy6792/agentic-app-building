@@ -5,14 +5,14 @@ import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { PgVector } from '@mastra/pg';
 import _ from 'lodash';
-import { searchSchema, sessionsSchema } from '../schema';
-import { sessions } from '@/data/sessions';
-
-const INDEX_NAME = 'session_embeddings';
+import { type queryResultsSchema, searchSchema, sessionsSchema } from '../schema';
+import { type sessionExtractionAgent } from '../agents';
+import { parseResult } from '../mastra-utils';
+import { DOCUMENTS_INDEX_NAME } from '../config';
 
 const SCORE_THRESHOLD = 0.2;
 
-const searchSessions = async (context: z.infer<typeof searchSchema>): Promise<z.infer<typeof sessionsSchema>> => {
+const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z.infer<typeof queryResultsSchema>> => {
   const { query, topK } = context;
 
   try {
@@ -28,49 +28,64 @@ const searchSessions = async (context: z.infer<typeof searchSchema>): Promise<z.
       connectionString: process.env.DB_CONNECTION_STRING!,
     });
 
-    // Query the vector database
+    // Query the vector database - search across all documents (PDFs + sessions)
     const results = await vectorStore.query({
-      indexName: INDEX_NAME,
+      indexName: DOCUMENTS_INDEX_NAME,
       queryVector: queryEmbedding,
-      topK,
+      topK: topK * 2, // Get more results to ensure we have enough context
     });
 
-    console.log('Results:', JSON.stringify(results, null, 2));
+    console.log('Vector search results:', JSON.stringify(results, null, 2));
 
-    // Filter by score threshold and extract session objects
-    const matchedSessions = _.chain(results)
+    // Filter by score threshold and format results
+    const formattedResults = _.chain(results)
       .filter((result) => result.score > SCORE_THRESHOLD)
-      .orderBy((result) => result.score as number, 'desc')
-      .map((result) => {
-        const sessionIndex = result.metadata?.sessionIndex as number;
-        return sessions[sessionIndex];
-      })
-      .filter((session) => session !== undefined)
+      .orderBy((result) => result.score, 'desc')
+      .map((result, index) => ({
+        rank: index + 1,
+        text: result.metadata?.text ?? 'No text available',
+        source: result.metadata?.source ?? 'Unknown source',
+        score: result.score,
+        sessionIndex: result.metadata?.sessionIndex as number | undefined,
+      }))
       .value();
 
-    console.log(`Found ${matchedSessions.length} matching sessions for query: "${query}"`);
-
-    console.log('Matched sessions:', JSON.stringify(matchedSessions, null, 2));
-
-    return matchedSessions as z.infer<typeof sessionsSchema>;
+    return {
+      query,
+      results: formattedResults,
+      summary: `Found ${formattedResults.length} relevant document chunks (including PDFs and session data).`,
+    };
   } catch (error) {
-    console.error('Error querying sessions:', error);
-    throw new Error(`Failed to query sessions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Error querying documents:', error);
+    throw new Error(`Failed to query documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
 export const searchSessionsTool = createTool({
   id: 'searchSessionsTool',
   description:
-    'Search for camp sessions based on user interests and requirements. Returns actual scheduled sessions with times, rooms, speakers, and descriptions.',
+    'Search for camp sessions using rich context from venue information, workshop slides, and session descriptions. Returns actual scheduled sessions that match the user query.',
   inputSchema: searchSchema,
   outputSchema: sessionsSchema,
-  execute: async ({ context }) => {
-    const timeA = new Date().getTime();
-    const result = await searchSessions(context);
-    const timeB = new Date().getTime();
-    console.log(`Time taken to search sessions: ${(timeB - timeA) / 1000} seconds`);
+  execute: async ({ context, mastra, writer }) => {
+    const searchTimeA = new Date().getTime();
+    const searchResults = await searchDocuments(context);
+    const searchTimeB = new Date().getTime();
+    console.log(`Time taken to search documents: ${(searchTimeB - searchTimeA) / 1000} seconds`);
 
-    return result;
+    // Use session extraction agent to map document results to actual sessions
+    const extractAgent = mastra?.getAgent('sessionExtractionAgent') as typeof sessionExtractionAgent;
+    const extractTimeA = new Date().getTime();
+    const stream = await extractAgent?.stream(JSON.stringify(searchResults));
+
+    await stream?.textStream?.pipeTo(writer!);
+
+    const extractedSessions = await stream.text;
+    const extractTimeB = new Date().getTime();
+    console.log(`Time taken to extract sessions: ${(extractTimeB - extractTimeA) / 1000} seconds`);
+
+    console.log('Extracted sessions:', extractedSessions);
+
+    return parseResult(extractedSessions, sessionsSchema);
   },
 });
