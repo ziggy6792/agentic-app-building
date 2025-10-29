@@ -85,7 +85,7 @@ const Chat = () => {
               // If your agent has working memory, you could fetch updated memory from server here (on end of messages response)
               // You would need
               // - Server action to update working memory (accessed through tool call)
-              // - Server action to get working memory (accessed through tool call and client action)
+              // - Server action to get working memory (accessed through tool call/injected into system prompt and accessed here - client action)
             }
           }}
         />
