@@ -69,12 +69,25 @@ const Chat = () => {
     []
   );
 
+  const [isFirstMessageSent, setIsFirstMessageSent] = useState(false);
+
   return (
     <div className='flex justify-center items-center h-full w-full' style={{ background }}>
       <div className='w-8/10 h-8/10 rounded-lg '>
         <CopilotChat
           className='h-full w-full rounded-2xl py-6'
           labels={{ initial: 'Hi, please tell what you are looking for. I will help you find the best sessions for you.' }}
+          onInProgress={(inProgress) => {
+            if (inProgress && !isFirstMessageSent) setIsFirstMessageSent(true);
+            if (!inProgress && isFirstMessageSent) {
+              // eslint-disable-next-line no-console
+              console.log('Response received - Fetch working memory');
+              // If your agent has working memory, you could fetch updated memory from server here (on end of messages response)
+              // You would need
+              // - Server action to update working memory (accessed through tool call)
+              // - Server action to get working memory (accessed through tool call and client action)
+            }
+          }}
         />
       </div>
     </div>
