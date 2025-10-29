@@ -3,13 +3,20 @@ import { readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { PgVector } from '@mastra/pg';
+// import { PgVector } from '@mastra/pg';
 import { MDocument } from '@mastra/rag';
+import { LibSQLVector } from '@mastra/libsql';
 
 const DOCS_PATH = join(process.cwd(), 'docs');
 
+const DATA_PATH = join(process.cwd(), 'data');
+
 if (!existsSync(DOCS_PATH)) {
   mkdirSync(DOCS_PATH);
+}
+
+if (!existsSync(DATA_PATH)) {
+  mkdirSync(DATA_PATH);
 }
 
 const INDEX_NAME = 'documents';
@@ -19,8 +26,8 @@ async function embedDocuments() {
   console.log('🚀 Starting document embedding process...');
 
   // Initialize PostgreSQL vector store
-  const vectorStore = new PgVector({
-    connectionString: process.env.DB_CONNECTION_STRING!,
+  const vectorStore = new LibSQLVector({
+    connectionUrl: 'file:./data/vectors.db',
   });
 
   // Delete existing index and recreate to clear all data

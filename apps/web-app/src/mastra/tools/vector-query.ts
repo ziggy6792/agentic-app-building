@@ -2,7 +2,7 @@ import { createTool } from '@mastra/core/tools';
 import { type z } from 'zod';
 import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { PgVector } from '@mastra/pg';
+import { LibSQLVector } from '@mastra/libsql';
 import { type queryResultsSchema, searchSchema, sessionsSchema } from '../schema';
 import { type sessionFormatAgent } from '../agents';
 import { parseResult } from '../mastra-utils';
@@ -21,8 +21,8 @@ const searchDocuments = async (context: z.infer<typeof searchSchema>): Promise<z
     const queryEmbedding = embeddings[0];
 
     // Initialize vector store
-    const vectorStore = new PgVector({
-      connectionString: process.env.DB_CONNECTION_STRING!,
+    const vectorStore = new LibSQLVector({
+      connectionUrl: 'file:./data/vectors.db',
     });
 
     // Query the vector database

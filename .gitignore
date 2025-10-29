@@ -278,3 +278,5 @@ apps/web-app/**.zip
 **/exports
 
 docs/
+
+**/data/
