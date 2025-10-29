@@ -9,7 +9,7 @@ import { type queryResultsSchema, searchSchema, sessionsWithReasonsSchema } from
 import { type sessionExtractionAgent } from '../agents';
 import { parseResult } from '../mastra-utils';
 
-const INDEX_NAME = 'documents';
+const INDEX_NAME = 'documents_session_explorer_improved';
 
 const SCORE_THRESHOLD = 0.1; // Lowered from 0.2 to be less strict
 

@@ -13,7 +13,7 @@ if (!existsSync(DOCS_PATH)) {
   mkdirSync(DOCS_PATH);
 }
 
-const INDEX_NAME = 'documents';
+const INDEX_NAME = 'documents_session_explorer_improved';
 
 // Sanitize text to remove null bytes and other problematic characters
 function sanitizeText(text: string): string {

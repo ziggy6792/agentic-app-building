@@ -7,7 +7,7 @@ import { type sessionExtractionAgent } from '../agents';
 import { parseResult } from '../mastra-utils';
 import { sessionsWithReasonsSchema } from '../schema';
 
-const INDEX_NAME = 'documents';
+const INDEX_NAME = 'documents_session_explorer_improved';
 const SCORE_THRESHOLD = 0.1;
 
 interface TestCase {
@@ -35,7 +35,7 @@ const testCases: TestCase[] = [
 ];
 
 async function testSearch(testCase: TestCase) {
-  console.log('\n' + '='.repeat(80));
+  console.log(`\n${'='.repeat(80)}`);
   console.log(`TEST: ${testCase.description}`);
   console.log(`Query: "${testCase.query}"`);
   console.log(`Expected: "${testCase.expectedSessionTitle}"`);
@@ -93,7 +93,7 @@ async function testSearch(testCase: TestCase) {
       summary: `Found ${formattedResults.length} relevant document chunks`,
     };
 
-    const extractAgent = mastra.getAgent('sessionExtractionAgent') as typeof sessionExtractionAgent;
+    const extractAgent = mastra.getAgent('sessionExtractionAgent');
     const stream = await extractAgent.stream(JSON.stringify(searchResults));
     const extractedSessions = await stream.text;
     const extractTime = Date.now() - extractStartTime;
@@ -130,7 +130,7 @@ async function runTests() {
 
   const results = await Promise.all(testCases.map((testCase) => testSearch(testCase)));
 
-  console.log('\n' + '='.repeat(80));
+  console.log(`\n${'='.repeat(80)}`);
   console.log('SUMMARY');
   console.log('='.repeat(80));
 
